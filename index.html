@@ -420,6 +420,11 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
       <input type="number" class="page-input" id="pageInput" value="1" min="1" onkeydown="if(event.key==='Enter')viewerGoToPage()">
       <button onclick="viewerRotate(-90)">↺</button>
       <button onclick="viewerRotate(90)">↻</button>
+      <span style="color:var(--text-secondary);margin:0 4px">|</span>
+      <button onclick="zoomOut()" title="Zoom out">−</button>
+      <span id="zoomLabel" style="font-size:var(--font-size-sm);color:var(--text-secondary);min-width:36px;text-align:center">100%</span>
+      <button onclick="zoomIn()" title="Zoom in">+</button>
+      <button onclick="zoomReset()" title="Reset">1:1</button>
       <span style="color:var(--text-secondary);margin:0 6px">|</span>
       <button id="penToolBtn" onclick="togglePenTool()">✎ 笔</button>
       <div class="pen-toolbar" id="penToolbar" style="display:none">
@@ -499,6 +504,7 @@ let viewerPdfDoc = null;
 let viewerCurrentPage = 1;
 let viewerTotalPages = 0;
 let viewerRotation = 0;
+let viewerZoom = 1.0;
 let penToolActive = false;
 let eraserActive = false;
 let penColor = '#1a1a2e';
@@ -805,11 +811,13 @@ window.openMaterial = function(matId) {
   currentViewerMaterial = mat;
   viewerCurrentPage = mat.lastPage || 1;
   viewerRotation = 0;
+  viewerZoom = 1.0;
   notePanelOpen = false; penToolActive = false; eraserActive = false;
   penStrokes = []; pageSnapshots = {};
   currentNotePage = viewerCurrentPage;
 
   document.getElementById('viewerTitle').textContent = mat.name;
+  updateZoomLabel();
   document.getElementById('viewerOverlay').classList.remove('hidden');
   document.getElementById('notePanel').classList.add('hidden');
   document.getElementById('notePanel').innerHTML = '';
@@ -897,7 +905,15 @@ async function renderCurrentPage() {
   if (mat.type === 'pdf' && viewerPdfDoc && viewerCurrentPage <= pdfPageCount) {
     try {
     const page = await viewerPdfDoc.getPage(viewerCurrentPage);
-    const scale = isFullscreen ? 2.0 : 1.5;
+    
+    // Calculate auto-fit scale based on container size
+    const bodyEl = document.getElementById('viewerBody');
+    const maxW = bodyEl.clientWidth - 40;
+    const maxH = bodyEl.clientHeight - 40;
+    const natViewport = page.getViewport({ scale: 1 });
+    const fitScale = Math.min(maxW / natViewport.width, maxH / natViewport.height, 2.5);
+    const baseScale = isFullscreen ? fitScale * 1.1 : fitScale;
+    const scale = baseScale * viewerZoom;
     const viewport = page.getViewport({ scale, rotation: viewerRotation });
 
     container.innerHTML =
@@ -1259,7 +1275,7 @@ window.closeViewer = function() {
   if (penCanvas) pageSnapshots[viewerCurrentPage] = penCanvas.toDataURL();
   savePageAnnotations();
   document.getElementById('viewerOverlay').classList.add('hidden');
-  viewerPdfDoc = null; viewerTotalPages = 0; currentViewerMaterial = null; docxPageData = {};
+  viewerPdfDoc = null; viewerTotalPages = 0; viewerZoom = 1.0; currentViewerMaterial = null; docxPageData = {};
   notePanelOpen = false; penToolActive = false; eraserActive = false;
   document.getElementById('notePanel').classList.add('hidden');
   document.getElementById('notePanel').innerHTML = '';
@@ -1279,6 +1295,40 @@ window.deleteMaterial = function() {
   closeViewer(); renderAll();
   showToast('Moved to trash: ' + mat.name);
 };
+
+/* ========== Zoom ========== */
+function updateZoomLabel() {
+  const lbl = document.getElementById('zoomLabel');
+  if (lbl) lbl.textContent = Math.round(viewerZoom * 100) + '%';
+}
+
+window.zoomIn = function() {
+  viewerZoom = Math.min(3.0, viewerZoom + 0.25);
+  updateZoomLabel();
+  goToViewerPage(viewerCurrentPage);
+};
+
+window.zoomOut = function() {
+  viewerZoom = Math.max(0.25, viewerZoom - 0.25);
+  updateZoomLabel();
+  goToViewerPage(viewerCurrentPage);
+};
+
+window.zoomReset = function() {
+  viewerZoom = 1.0;
+  updateZoomLabel();
+  goToViewerPage(viewerCurrentPage);
+};
+
+// Ctrl+scroll zoom in fullscreen
+document.addEventListener('wheel', function(e) {
+  if (!isFullscreen || !currentViewerMaterial) return;
+  if (e.ctrlKey) {
+    e.preventDefault();
+    if (e.deltaY < 0) zoomIn();
+    else zoomOut();
+  }
+}, { passive: false });
 
 /* ========== Fullscreen ========== */
 window.toggleFullscreen = function() {
@@ -1308,6 +1358,7 @@ function exitFullscreen() {
 let scrollAccum = 0;
 function onScrollWheel(e) {
   if (!isFullscreen) return;
+  if (e.ctrlKey) return; // Let zoom handler take over
   e.preventDefault();
   scrollAccum += e.deltaY;
   const threshold = 80;
