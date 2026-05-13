@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rhein Lab \u00b7 Document System</title>
+<title>Rhein Lab · Document System</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 <style>
@@ -24,7 +24,7 @@
 }
 
 /* ====== 5 Rhein Lab Themes ====== */
-[data-theme="rhine"] { /* \u83b1\u8335\u84dd - default */ }
+[data-theme="rhine"] { /* 莱茵蓝 - default */ }
 [data-theme="frost"] {
   --bg-main: #eef3f8; --bg-card: #fafcfd; --text-primary: #1a2a3a;
   --text-secondary: #5a6a7a; --accent: #4a90c4; --accent-light: #e1eff7;
@@ -304,6 +304,20 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
 .docx-content h1,.docx-content h2,.docx-content h3 { margin:14px 0 6px; }
 .docx-content p { margin:6px 0; line-height:1.7; }
 .docx-content img { max-width:100%; height:auto; }
+
+/* Paginated DOCX pages */
+.docx-page { box-shadow: 0 4px 16px rgba(0,0,0,0.1); border-radius: 4px; }
+.docx-page h1 { font-size: 22px; font-weight: 700; margin: 0 0 14px 0; color: #1a1a2e; border-bottom: 2px solid #3b7dd8; padding-bottom: 8px; }
+.docx-page h2 { font-size: 18px; font-weight: 600; margin: 18px 0 10px 0; color: #1a1a2e; }
+.docx-page h3 { font-size: 15px; font-weight: 600; margin: 14px 0 8px 0; color: #333; }
+.docx-page p { margin: 0 0 10px 0; line-height: 1.7; text-align: justify; }
+.docx-page ul, .docx-page ol { margin: 8px 0 10px 0; padding-left: 24px; }
+.docx-page li { margin-bottom: 4px; line-height: 1.6; }
+.docx-page table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 12px; }
+.docx-page table td, .docx-page table th { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+.docx-page table th { background: #f0f4f8; font-weight: 600; }
+.docx-page img { max-width: 100%; height: auto; display: block; margin: 10px auto; }
+.docx-page blockquote { border-left: 3px solid #3b7dd8; padding: 8px 16px; margin: 12px 0; background: #f8fafc; color: #555; }
 .toast { position:fixed; bottom:20px; right:20px; background:var(--bg-sidebar); color:#fff; padding:10px 18px; border-radius:var(--radius); font-size:var(--font-size-sm); z-index:400; animation:slideUp 0.3s ease; box-shadow:var(--shadow-lg); border-left:3px solid var(--accent); max-width:320px; }
 .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:350; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.15s ease; }
 .confirm-dialog { background:var(--bg-card); border-radius:var(--radius-lg); padding:22px; width:320px; box-shadow:var(--shadow-lg); animation:slideUp 0.2s ease; }
@@ -323,15 +337,15 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-hex"><span>\u25c6</span></div>
+    <div class="logo-hex"><span>◆</span></div>
     <div><div class="logo-text">Rhein Lab</div><div class="logo-sub">Document System</div></div>
   </div>
-  <div class="sidebar-section">\u8d44\u6599\u5e93</div>
-  <ul class="sidebar-list" id="sidebarList"><li style="padding:16px;text-align:center;opacity:0.35;font-size:11px">\u6682\u65e0\u8d44\u6599</li></ul>
-  <div class="sidebar-section">\u5176\u4ed6</div>
+  <div class="sidebar-section">资料库</div>
+  <ul class="sidebar-list" id="sidebarList"><li style="padding:16px;text-align:center;opacity:0.35;font-size:11px">暂无资料</li></ul>
+  <div class="sidebar-section">其他</div>
   <ul class="sidebar-list" id="sidebarBottom">
     <li class="sidebar-item trash-item" id="trashSidebarItem" onclick="openTrash()" style="display:none">
-      <span class="item-icon">\u267b</span><span>\u56de\u6536\u7ad9</span>
+      <span class="item-icon">♻</span><span>回收站</span>
       <span class="trash-count" id="trashCount">0</span>
     </li>
   </ul>
@@ -339,18 +353,18 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
 
 <main class="main">
   <header class="topbar">
-    <span class="topbar-title">\u8d44\u6599\u67dc \u00b7 Cabinet</span>
+    <span class="topbar-title">资料柜 · Cabinet</span>
     <span class="topbar-spacer"></span>
-    <button class="topbar-btn" onclick="toggleSettings()" title="\u8bbe\u7f6e">\u2699</button>
+    <button class="topbar-btn" onclick="toggleSettings()" title="设置">⚙</button>
   </header>
 
   <div class="content-area" id="contentArea">
     <div id="mainView">
       <div class="action-cards">
         <div class="action-card" onclick="document.getElementById('importFileInput').click()">
-          <div class="action-icon">\u21e7</div>
+          <div class="action-icon">⇧</div>
           <div>
-            <div style="font-weight:600">\u5bfc\u5165\u8d44\u6599</div>
+            <div style="font-weight:600">导入资料</div>
             <div style="font-size:11px;opacity:0.6">PDF / DOCX / PNG</div>
           </div>
         </div>
@@ -358,18 +372,18 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
       </div>
       <div class="cabinet-area" id="cabinetArea">
         <div class="empty-state" id="emptyState">
-          <div class="empty-icon">\u25a1</div>
-          <p>\u6682\u65e0\u8d44\u6599</p>
-          <div class="empty-sub">\u70b9\u51fb\u4e0a\u65b9\u6309\u94ae\u5bfc\u5165\u8d44\u6599</div>
+          <div class="empty-icon">□</div>
+          <p>暂无资料</p>
+          <div class="empty-sub">点击上方按钮导入资料</div>
         </div>
       </div>
     </div>
 
     <div id="trashView" class="hidden">
       <div class="trash-view">
-        <h2>\u267b \u56de\u6536\u7ad9</h2>
-        <div class="trash-subtitle">\u5df2\u5220\u9664\u7684\u8d44\u6599</div>
-        <button class="action-card" onclick="closeTrash()" style="margin-bottom:18px"><div class="action-icon">\u2190</div><div style="font-weight:600">\u8fd4\u56de\u8d44\u6599\u67dc</div></button>
+        <h2>♻ 回收站</h2>
+        <div class="trash-subtitle">已删除的资料</div>
+        <button class="action-card" onclick="closeTrash()" style="margin-bottom:18px"><div class="action-icon">←</div><div style="font-weight:600">返回资料柜</div></button>
         <div class="trash-grid" id="trashGrid"></div>
       </div>
     </div>
@@ -380,11 +394,11 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
 <div class="viewer-overlay hidden" id="viewerOverlay">
   <div class="viewer-container" id="viewerContainer">
     <div class="viewer-header">
-      <h3 id="viewerTitle">\u8d44\u6599\u6d4f\u89c8</h3>
-      <button class="topbar-btn" onclick="toggleFullscreen()" title="\u5168\u5c4f" id="fullscreenBtn">\u26f6</button>
-      <button class="topbar-btn" onclick="deleteMaterial()" title="\u5220\u9664">\u2716</button>
-      <button class="topbar-btn" onclick="toggleNotePanel()" title="\u7b14\u8bb0" id="noteToggleBtn">\u270e</button>
-      <button class="close-btn" onclick="closeViewer()">\u2715</button>
+      <h3 id="viewerTitle">资料浏览</h3>
+      <button class="topbar-btn" onclick="toggleFullscreen()" title="全屏" id="fullscreenBtn">⛶</button>
+      <button class="topbar-btn" onclick="deleteMaterial()" title="删除">✖</button>
+      <button class="topbar-btn" onclick="toggleNotePanel()" title="笔记" id="noteToggleBtn">✎</button>
+      <button class="close-btn" onclick="closeViewer()">✕</button>
     </div>
     <div class="viewer-body" id="viewerBody">
       <div id="viewerContent" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:relative;"></div>
@@ -392,20 +406,20 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
       <!-- Fullscreen + button -->
       <div class="fullscreen-plus hidden" id="fullscreenPlus" onclick="togglePlusMenu()">+</div>
       <div class="fullscreen-plus-menu hidden" id="plusMenu">
-        <button onclick="addBlankPage()">\u25a1 \u6dfb\u52a0\u7a7a\u767d\u9875</button>
-        <button onclick="addNoteFromFS()">\u270e \u6dfb\u52a0\u7b14\u8bb0</button>
+        <button onclick="addBlankPage()">□ 添加空白页</button>
+        <button onclick="addNoteFromFS()">✎ 添加笔记</button>
       </div>
     </div>
     <div class="viewer-footer" id="viewerFooter">
-      <button onclick="viewerPrevPage()" id="btnPrev" disabled>\u25c0</button>
+      <button onclick="viewerPrevPage()" id="btnPrev" disabled>◀</button>
       <span class="page-info" id="pageInfo">1 / 1</span>
-      <button onclick="viewerNextPage()" id="btnNext" disabled>\u25b6</button>
-      <button onclick="viewerJumpPage()">\u2192\u8df3\u8f6c</button>
+      <button onclick="viewerNextPage()" id="btnNext" disabled>▶</button>
+      <button onclick="viewerJumpPage()">→跳转</button>
       <input type="number" class="page-input" id="pageInput" value="1" min="1" onkeydown="if(event.key==='Enter')viewerGoToPage()">
-      <button onclick="viewerRotate(-90)">\u21ba</button>
-      <button onclick="viewerRotate(90)">\u21bb</button>
+      <button onclick="viewerRotate(-90)">↺</button>
+      <button onclick="viewerRotate(90)">↻</button>
       <span style="color:var(--text-secondary);margin:0 6px">|</span>
-      <button id="penToolBtn" onclick="togglePenTool()">\u270e \u7b14</button>
+      <button id="penToolBtn" onclick="togglePenTool()">✎ 笔</button>
       <div class="pen-toolbar" id="penToolbar" style="display:none">
         <div class="pen-color active" style="background:#1a1a2e" data-color="#1a1a2e" onclick="setPenColor('#1a1a2e',this)"></div>
         <div class="pen-color" style="background:#e53935" data-color="#e53935" onclick="setPenColor('#e53935',this)"></div>
@@ -414,8 +428,8 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
         <div class="pen-color" style="background:#fb8c00" data-color="#fb8c00" onclick="setPenColor('#fb8c00',this)"></div>
         <div class="pen-color" style="background:#8e24aa" data-color="#8e24aa" onclick="setPenColor('#8e24aa',this)"></div>
         <input type="range" class="pen-size" min="1" max="12" value="3" oninput="penWidth=parseInt(this.value)">
-        <button class="topbar-btn" onclick="undoPenStroke()" title="\u64a4\u56de">\u21a9</button>
-        <button class="topbar-btn" id="eraserToolBtn" onclick="toggleEraser()" title="\u6a61\u76ae">\u232b</button>
+        <button class="topbar-btn" onclick="undoPenStroke()" title="撤回">↩</button>
+        <button class="topbar-btn" id="eraserToolBtn" onclick="toggleEraser()" title="橡皮">⌫</button>
       </div>
     </div>
   </div>
@@ -424,10 +438,10 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
 <!-- Settings -->
 <div class="settings-overlay hidden" id="settingsOverlay">
   <div class="settings-panel">
-    <div class="settings-panel-header"><span>\u2699 \u8bbe\u7f6e</span><button class="close-btn" onclick="toggleSettings()">\u2715</button></div>
+    <div class="settings-panel-header"><span>⚙ 设置</span><button class="close-btn" onclick="toggleSettings()">✕</button></div>
     <div class="settings-panel-body">
       <div class="settings-group">
-        <label>\u5b57\u4f53\u5927\u5c0f</label>
+        <label>字体大小</label>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:11px">A</span>
           <input type="range" min="12" max="20" value="14" id="fontSizeSlider" oninput="updateFontSize(this.value)" style="flex:1">
@@ -436,19 +450,19 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
         </div>
       </div>
       <div class="settings-group">
-        <label>\u83b1\u8335\u751f\u547d\u914d\u8272</label>
+        <label>莱茵生命配色</label>
         <div class="theme-options">
-          <div class="theme-pick active" style="background:linear-gradient(135deg,#4a90d9,#3b7dd8)" data-theme="rhine" onclick="setTheme('rhine')" title="\u83b1\u8335\u84dd"></div>
-          <div class="theme-pick" style="background:linear-gradient(135deg,#a8c8e8,#7ab0d4)" data-theme="frost" onclick="setTheme('frost')" title="\u971c\u767d"></div>
-          <div class="theme-pick" style="background:linear-gradient(135deg,#78909c,#546e7a)" data-theme="graphite" onclick="setTheme('graphite')" title="\u77f3\u58a8"></div>
-          <div class="theme-pick" style="background:linear-gradient(135deg,#c8b89a,#a89470)" data-theme="ivory" onclick="setTheme('ivory')" title="\u8c61\u7259"></div>
-          <div class="theme-pick" style="background:linear-gradient(135deg,#5c9a8b,#3d7068)" data-theme="emerald" onclick="setTheme('emerald')" title="\u7fe0\u7eff"></div>
+          <div class="theme-pick active" style="background:linear-gradient(135deg,#4a90d9,#3b7dd8)" data-theme="rhine" onclick="setTheme('rhine')" title="莱茵蓝"></div>
+          <div class="theme-pick" style="background:linear-gradient(135deg,#a8c8e8,#7ab0d4)" data-theme="frost" onclick="setTheme('frost')" title="霜白"></div>
+          <div class="theme-pick" style="background:linear-gradient(135deg,#78909c,#546e7a)" data-theme="graphite" onclick="setTheme('graphite')" title="石墨"></div>
+          <div class="theme-pick" style="background:linear-gradient(135deg,#c8b89a,#a89470)" data-theme="ivory" onclick="setTheme('ivory')" title="象牙"></div>
+          <div class="theme-pick" style="background:linear-gradient(135deg,#5c9a8b,#3d7068)" data-theme="emerald" onclick="setTheme('emerald')" title="翠绿"></div>
         </div>
       </div>
       <div class="settings-group">
-        <label>\u6a21\u5f0f\u5207\u6362</label>
+        <label>模式切换</label>
         <div class="mode-toggle" id="modeToggle" onclick="toggleMode()">
-          <span>\u2600</span><span class="toggle-label">\u65e5\u95f4\u6a21\u5f0f</span><span class="toggle-switch"></span><span>\u263e</span>
+          <span>☀</span><span class="toggle-label">日间模式</span><span class="toggle-switch"></span><span>☾</span>
         </div>
       </div>
     </div>
@@ -458,10 +472,10 @@ body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
 <!-- Confirm -->
 <div class="confirm-overlay hidden" id="confirmOverlay">
   <div class="confirm-dialog">
-    <p id="confirmMessage">\u786e\u5b9a\uff1f</p>
+    <p id="confirmMessage">确定？</p>
     <div class="confirm-actions">
-      <button class="btn-cancel" onclick="closeConfirm()">\u53d6\u6d88</button>
-      <button class="btn-danger" id="confirmOkBtn">\u786e\u5b9a</button>
+      <button class="btn-cancel" onclick="closeConfirm()">取消</button>
+      <button class="btn-danger" id="confirmOkBtn">确定</button>
     </div>
   </div>
 </div>
@@ -532,7 +546,7 @@ function showToast(msg) {
   setTimeout(() => t.remove(), 2500);
 }
 function generateId() { return 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2,6); }
-function getMaterialIcon(type) { const m = { empty:'\u25a1', pdf:'\u25a3', docx:'\u25a8', png:'\u25e2', jpg:'\u25e2', jpeg:'\u25e2' }; return m[type] || '\u25a1'; }
+function getMaterialIcon(type) { const m = { empty:'□', pdf:'▣', docx:'▨', png:'◢', jpg:'◢', jpeg:'◢' }; return m[type] || '□'; }
 function getMaterialTypeLabel(type) { const m = { empty:'Blank', pdf:'PDF', docx:'DOCX', png:'Image', jpg:'Image', jpeg:'Image' }; return m[type] || type.toUpperCase(); }
 function findFreePosition() {
   const area = document.getElementById('cabinetArea');
@@ -721,7 +735,7 @@ window.openTrash = function() {
   trashViewOpen = true;
   document.getElementById('mainView').classList.add('hidden');
   document.getElementById('trashView').classList.remove('hidden');
-  document.querySelector('.topbar-title').textContent = '\u267b \u56de\u6536\u7ad9';
+  document.querySelector('.topbar-title').textContent = '♻ 回收站';
   renderTrashView();
 };
 
@@ -729,13 +743,13 @@ window.closeTrash = function() {
   trashViewOpen = false;
   document.getElementById('mainView').classList.remove('hidden');
   document.getElementById('trashView').classList.add('hidden');
-  document.querySelector('.topbar-title').textContent = '\u8d44\u6599\u67dc \u00b7 Cabinet';
+  document.querySelector('.topbar-title').textContent = '资料柜 · Cabinet';
 };
 
 function renderTrashView() {
   const grid = document.getElementById('trashGrid');
   if (trash.length === 0) {
-    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">\u25a1</div><p>\u56de\u6536\u7ad9\u4e3a\u7a7a</p></div>';
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">□</div><p>回收站为空</p></div>';
     return;
   }
   grid.innerHTML = trash.map((mat, i) =>
@@ -743,8 +757,8 @@ function renderTrashView() {
     '<div class="trash-card-name">' + getMaterialIcon(mat.type) + ' ' + mat.name + '</div>' +
     '<div class="trash-card-meta">' + getMaterialTypeLabel(mat.type) + ' | ' + new Date(mat.deletedAt).toLocaleDateString('zh-CN') + '</div>' +
     '<div class="trash-actions">' +
-    '<button class="btn-restore" onclick="restoreFromTrash(' + i + ')">\u21a9 \u6062\u590d</button>' +
-    '<button class="btn-delete" onclick="permanentDelete(' + i + ')">\u2716 \u5f7b\u5e95\u5220\u9664</button>' +
+    '<button class="btn-restore" onclick="restoreFromTrash(' + i + ')">↩ 恢复</button>' +
+    '<button class="btn-delete" onclick="permanentDelete(' + i + ')">✖ 彻底删除</button>' +
     '</div></div>'
   ).join('');
 }
@@ -843,6 +857,11 @@ async function renderCurrentPage() {
       '<canvas class="pen-canvas" id="penCanvas" width="800" height="1100"></canvas>' +
       '</div>';
     initPenCanvas(viewerCurrentPage);
+    return;
+  }
+
+  if (mat.type === 'docx') {
+    renderDocxPage(viewerCurrentPage);
     return;
   }
 
@@ -1052,10 +1071,99 @@ async function openDocxViewer(mat) {
     const bin = atob(b64); const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer });
-    document.getElementById('viewerContent').innerHTML = '<div class="docx-content">' + result.value + '</div>';
-    viewerTotalPages = 1 + Object.keys(mat.extraPages || {}).length;
+    // Paginate DOCX content
+    const pageCount = paginateDocxContent(result.value, mat);
+    viewerTotalPages = pageCount + Object.keys(mat.extraPages || {}).length;
+    mat.pageCount = viewerTotalPages;
+    viewerCurrentPage = Math.min(viewerCurrentPage, viewerTotalPages);
+    renderDocxPage(viewerCurrentPage);
     updateViewerFooter();
   } catch(err) { document.getElementById('viewerContent').innerHTML = '<p>DOCX error: ' + err.message + '</p>'; }
+}
+
+// Store paginated DOCX data per material (in memory)
+let docxPageData = {}; // { matId: { html: string, pages: [{startNode, endNode, content}], pageHeight: number } }
+
+const PAGE_WIDTH = 760;
+const PAGE_HEIGHT = 1060;
+
+function paginateDocxContent(html, mat) {
+  // Create measurement container
+  const measure = document.createElement('div');
+  measure.style.cssText = 'position:absolute;left:-9999px;top:0;width:' + PAGE_WIDTH + 'px;visibility:hidden;font-family:Georgia,"Times New Roman",serif;font-size:14px;line-height:1.7;color:#1a1a2e;';
+  measure.innerHTML = html;
+  document.body.appendChild(measure);
+
+  // Wait for layout
+  const totalHeight = measure.scrollHeight;
+  const rawPageCount = Math.ceil(totalHeight / PAGE_HEIGHT);
+  const pages = [];
+
+  if (rawPageCount <= 1) {
+    // Single page - just wrap
+    pages.push({ content: html, pageNum: 1 });
+  } else {
+    // Split by walking DOM nodes
+    const children = Array.from(measure.children);
+    let currentPageContent = '';
+    let currentPageHeight = 0;
+    let pageNum = 1;
+
+    for (const child of children) {
+      const childHeight = child.offsetHeight + parseInt(getComputedStyle(child).marginBottom || 0) + parseInt(getComputedStyle(child).marginTop || 0);
+
+      if (currentPageHeight + childHeight > PAGE_HEIGHT && currentPageContent !== '') {
+        pages.push({ content: currentPageContent, pageNum: pageNum });
+        currentPageContent = '';
+        currentPageHeight = 0;
+        pageNum++;
+      }
+
+      currentPageContent += child.outerHTML;
+      currentPageHeight += childHeight;
+    }
+
+    if (currentPageContent !== '') {
+      pages.push({ content: currentPageContent, pageNum: pageNum });
+    }
+  }
+
+  document.body.removeChild(measure);
+
+  // Store for later use
+  docxPageData[mat.id] = { html: html, pages: pages, pageHeight: PAGE_HEIGHT };
+  return pages.length;
+}
+
+function renderDocxPage(pageNum) {
+  const mat = currentViewerMaterial;
+  if (!mat || !docxPageData[mat.id]) return;
+  const data = docxPageData[mat.id];
+  const pageIdx = pageNum - 1;
+
+  // Check if extra page
+  const basePages = data.pages.length;
+  if (pageNum > basePages && mat.extraPages && mat.extraPages[pageNum]) {
+    document.getElementById('viewerContent').innerHTML =
+      '<div class="page-wrapper">' +
+      '<div class="docx-page" style="width:' + PAGE_WIDTH + 'px;height:' + PAGE_HEIGHT + 'px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;color:#ccc">Blank Page</div>' +
+      '<canvas class="pen-canvas" id="penCanvas" width="' + PAGE_WIDTH + '" height="' + PAGE_HEIGHT + '"></canvas>' +
+      '</div>';
+    initPenCanvas(pageNum);
+    return;
+  }
+
+  if (pageIdx < 0 || pageIdx >= data.pages.length) return;
+  const page = data.pages[pageIdx];
+
+  document.getElementById('viewerContent').innerHTML =
+    '<div class="page-wrapper">' +
+    '<div class="docx-page" style="width:' + PAGE_WIDTH + 'px;min-height:' + PAGE_HEIGHT + 'px;background:#fff;padding:40px 48px;font-family:Georgia,"Times New Roman",serif;font-size:14px;line-height:1.7;color:#1a1a2e;box-shadow:var(--shadow-lg);overflow:hidden;">' +
+    page.content +
+    '</div>' +
+    '<canvas class="pen-canvas" id="penCanvas" width="' + PAGE_WIDTH + '" height="' + PAGE_HEIGHT + '"></canvas>' +
+    '</div>';
+  initPenCanvas(pageNum);
 }
 
 function openImageViewer(mat) {
@@ -1066,7 +1174,7 @@ function openImageViewer(mat) {
 }
 
 function openEmptyViewer(mat) {
-  document.getElementById('viewerContent').innerHTML = '<div style="text-align:center;color:var(--text-secondary)"><div style="font-size:44px;margin-bottom:8px">\u25a1</div><p>Empty Material</p></div>';
+  document.getElementById('viewerContent').innerHTML = '<div style="text-align:center;color:var(--text-secondary)"><div style="font-size:44px;margin-bottom:8px">□</div><p>Empty Material</p></div>';
   viewerTotalPages = 1 + Object.keys(mat.extraPages || {}).length;
   updateViewerFooter();
 }
@@ -1118,7 +1226,7 @@ window.closeViewer = function() {
   if (penCanvas) pageSnapshots[viewerCurrentPage] = penCanvas.toDataURL();
   savePageAnnotations();
   document.getElementById('viewerOverlay').classList.add('hidden');
-  viewerPdfDoc = null; currentViewerMaterial = null;
+  viewerPdfDoc = null; currentViewerMaterial = null; docxPageData = {};
   notePanelOpen = false; penToolActive = false; eraserActive = false;
   document.getElementById('notePanel').classList.add('hidden');
   document.getElementById('notePanel').innerHTML = '';
@@ -1245,7 +1353,7 @@ function renderCabinet() {
     card.style.left = (mat.x || 0) + 'px';
     card.style.top = (mat.y || 0) + 'px';
     card.innerHTML =
-      '<button class="delete-btn" onclick="event.stopPropagation();deleteCardFromCabinet(\'' + mat.id + '\')">\u00d7</button>' +
+      '<button class="delete-btn" onclick="event.stopPropagation();deleteCardFromCabinet(\'' + mat.id + '\')">×</button>' +
       '<div class="card-accent"></div>' +
       '<div class="card-icon">' + getMaterialIcon(mat.type) + '</div>' +
       '<div class="card-name" title="' + mat.name + '">' + mat.name + '</div>' +
@@ -1308,11 +1416,11 @@ function openNotePanel(pageNum) {
   panel.innerHTML =
     '<div class="note-panel-header">' +
     '<h4>Notes - Page ' + pageNum + '</h4>' +
-    '<button class="close-btn" onclick="document.getElementById(\'notePanel\').classList.add(\'hidden\'); notePanelOpen = false;">\u2715</button>' +
+    '<button class="close-btn" onclick="document.getElementById(\'notePanel\').classList.add(\'hidden\'); notePanelOpen = false;">✕</button>' +
     '</div>' +
     '<div class="note-mode-select">' +
-    '<div class="note-mode-btn ' + (noteMode === 'handwrite' ? 'active' : '') + '" onclick="setNoteMode(\'handwrite\')">\u270e Handwrite</div>' +
-    '<div class="note-mode-btn ' + (noteMode === 'import' ? 'active' : '') + '" onclick="setNoteMode(\'import\')">\u21e7 Import</div>' +
+    '<div class="note-mode-btn ' + (noteMode === 'handwrite' ? 'active' : '') + '" onclick="setNoteMode(\'handwrite\')">✎ Handwrite</div>' +
+    '<div class="note-mode-btn ' + (noteMode === 'import' ? 'active' : '') + '" onclick="setNoteMode(\'import\')">⇧ Import</div>' +
     '</div>' +
     '<div id="noteContentArea" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>';
   renderNoteContent(pageNum);
@@ -1352,7 +1460,7 @@ function renderNoteContent(pageNum) {
     const imported = pageNotes.find(n => n.type === 'imported');
     area.innerHTML =
       '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px">' +
-      '<div style="font-size:44px;opacity:0.25">\u21e7</div>' +
+      '<div style="font-size:44px;opacity:0.25">⇧</div>' +
       '<p style="color:var(--text-secondary);font-size:12px">Import PDF or PNG as note</p>' +
       '<button class="note-mode-btn" onclick="document.getElementById(\'noteFileInput\').click()" style="padding:9px 20px;font-size:13px">Select File</button>' +
       '<input type="file" id="noteFileInput" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="handleNoteFileImport(event)">' +
@@ -1501,8 +1609,8 @@ window.toggleMode = function() {
   document.body.setAttribute('data-mode', nm);
   const t = document.getElementById('modeToggle');
   const l = t.querySelector('.toggle-label');
-  if (nm === 'dark') { t.classList.add('active'); l.textContent = '\u591c\u95f4\u6a21\u5f0f'; }
-  else { t.classList.remove('active'); l.textContent = '\u65e5\u95f4\u6a21\u5f0f'; }
+  if (nm === 'dark') { t.classList.add('active'); l.textContent = '夜间模式'; }
+  else { t.classList.remove('active'); l.textContent = '日间模式'; }
   saveSettings({ fontSize:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size-base')), theme:document.body.getAttribute('data-theme'), mode:nm });
 };
 
@@ -1520,7 +1628,7 @@ function init() {
   if (settings.mode === 'dark') {
     document.body.setAttribute('data-mode', 'dark');
     const t = document.getElementById('modeToggle');
-    t.classList.add('active'); t.querySelector('.toggle-label').textContent = '\u591c\u95f4\u6a21\u5f0f';
+    t.classList.add('active'); t.querySelector('.toggle-label').textContent = '夜间模式';
   }
   if (settings.fontSize) {
     document.getElementById('fontSizeSlider').value = settings.fontSize;
