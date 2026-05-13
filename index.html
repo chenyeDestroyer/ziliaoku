@@ -323,6 +323,32 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 .docx-page table th { background: #f0f4f8; font-weight: 600; }
 .docx-page img { max-width: 100%; height: auto; display: block; margin: 10px auto; }
 .docx-page blockquote { border-left: 3px solid #3b7dd8; padding: 8px 16px; margin: 12px 0; background: #f8fafc; color: #555; }
+.note-title-dialog { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:400; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.15s ease; }
+.note-title-dialog .dialog-box { background:var(--bg-card); border-radius:var(--radius-lg); padding:24px; width:340px; box-shadow:var(--shadow-lg); }
+.note-title-dialog .dialog-box h4 { margin-bottom:14px; font-size:var(--font-size-lg); }
+.note-title-dialog .dialog-box input { width:100%; padding:10px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px; background:var(--bg-card); color:var(--text-primary); margin-bottom:14px; }
+.note-title-dialog .dialog-box .dialog-btns { display:flex; gap:8px; justify-content:flex-end; }
+.note-title-dialog .dialog-box .dialog-btns button { padding:8px 18px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-size:13px; transition:all var(--transition); }
+.note-title-dialog .dialog-box .dialog-btns .btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+.fs-note-item { display:flex; align-items:center; gap:6px; padding:7px 10px; border-radius:var(--radius); cursor:pointer; transition:all var(--transition); font-size:12px; color:#ccc; position:relative; background:rgba(255,255,255,0.03); border:1px solid transparent; }
+.fs-note-item:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); }
+.fs-note-item.active { background:rgba(59,125,216,0.2); border-color:rgba(59,125,216,0.3); }
+.fs-note-item .note-delete { display:none; position:absolute; right:6px; top:50%; transform:translateY(-50%); width:18px; height:18px; border-radius:50%; background:#e53935; color:#fff; border:none; cursor:pointer; font-size:10px; line-height:1; }
+.fs-note-item:hover .note-delete { display:block; }
+
+/* Notes management view */
+.notes-mgmt { padding:20px; }
+.notes-mgmt h2 { font-size:var(--font-size-xl); margin-bottom:4px; }
+.notes-mgmt .mgmt-subtitle { font-size:var(--font-size-sm); color:var(--text-secondary); margin-bottom:18px; }
+.notes-mgmt .note-group { margin-bottom:16px; }
+.notes-mgmt .note-group-label { font-size:12px; font-weight:600; color:var(--accent); margin-bottom:6px; }
+.notes-mgmt .note-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:var(--radius); cursor:pointer; transition:all var(--transition); border:1px solid var(--border-light); margin-bottom:3px; }
+.notes-mgmt .note-row:hover { background:var(--accent-light); border-color:var(--accent); }
+.notes-mgmt .note-row .note-icon { font-size:14px; }
+.notes-mgmt .note-row .note-title { flex:1; font-size:13px; font-weight:500; }
+.notes-mgmt .note-row .note-jump { font-size:11px; color:var(--accent); opacity:0; transition:opacity 0.2s; }
+.notes-mgmt .note-row:hover .note-jump { opacity:1; }
 .toast { position:fixed; bottom:20px; right:20px; background:var(--bg-sidebar); color:#fff; padding:10px 18px; border-radius:var(--radius); font-size:var(--font-size-sm); z-index:400; animation:slideUp 0.3s ease; box-shadow:var(--shadow-lg); border-left:3px solid var(--accent); max-width:320px; }
 .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:350; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.15s ease; }
 .confirm-dialog { background:var(--bg-card); border-radius:var(--radius-lg); padding:22px; width:320px; box-shadow:var(--shadow-lg); animation:slideUp 0.2s ease; }
@@ -352,6 +378,9 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
     <li class="sidebar-item trash-item" id="trashSidebarItem" onclick="openTrash()" style="display:none">
       <span class="item-icon">♻</span><span>回收站</span>
       <span class="trash-count" id="trashCount">0</span>
+    </li>
+    <li class="sidebar-item" onclick="openNotesManagement()" title="Notes">
+      <span class="item-icon">✎</span><span>Notes</span>
     </li>
   </ul>
 </aside>
@@ -392,6 +421,15 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
         <div class="trash-grid" id="trashGrid"></div>
       </div>
     </div>
+
+    <div id="notesMgmtView" class="hidden">
+      <div class="notes-mgmt">
+        <h2>✎ Notes Management</h2>
+        <div class="mgmt-subtitle" id="notesMgmtSubtitle">All notes for this document</div>
+        <button class="action-card" onclick="closeNotesManagement()" style="margin-bottom:16px"><div class="action-icon">←</div><div style="font-weight:600">Back to Cabinet</div></button>
+        <div id="notesMgmtContent"></div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -411,9 +449,12 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
       <!-- Right-side auto-hide panel -->
       <div class="fs-right-trigger hidden" id="fsRightTrigger"></div>
       <div class="fs-right-panel" id="fsRightPanel">
-        <button onclick="addNoteFromFS()">✎ Notes</button>
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Page Actions</div>
+        <button onclick="showNewNoteDialog()">+ New Note</button>
         <button onclick="addBlankPage()">□ Add Blank Page</button>
-        <button class="danger" onclick="deleteCurrentPage()">✖ Delete This Page</button>
+        <button class="danger" onclick="deleteCurrentPage()">✖ Delete Page</button>
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin:10px 0 4px" id="fsPanelNotesLabel">Page Notes</div>
+        <div id="fsPanelNoteList" style="display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto"></div>
       </div>
     </div>
     <div class="viewer-footer" id="viewerFooter">
@@ -517,6 +558,8 @@ let penWidth = 3;
 let notePanelOpen = false;
 let currentNotePage = 1;
 let noteMode = 'handwrite';
+let currentNoteId = null;
+let notesViewOpen = false;
 let isDrawing = false;
 let noteStrokes = [];
 let currentStroke = [];
@@ -961,12 +1004,6 @@ async function renderCurrentPage() {
       await page.render({ canvasContext: pc.getContext('2d'), viewport }).promise;
     }
     initPenCanvas(viewerCurrentPage);
-    // Add pan support when not in pen mode
-    const pw = container.querySelector('.page-wrapper');
-    if (pw && isFullscreen) {
-      pw.classList.add('pannable');
-      pw.addEventListener('mousedown', startPan);
-    }
     } catch(e) { console.error('PDF page render error:', e); container.innerHTML = '<p>Error rendering page ' + viewerCurrentPage + ': ' + e.message + '</p>'; }
   } else if ((mat.type === 'png' || mat.type === 'jpeg') && viewerCurrentPage === 1) {
     container.innerHTML =
@@ -1306,6 +1343,17 @@ function goToViewerPage(pageNum) {
   if (penToolActive) {
     setTimeout(() => initPenCanvas(pageNum), 100);
   }
+  // Close note panel when switching pages
+  if (notePanelOpen || currentNoteId) {
+    if (noteCanvas && currentViewerMaterial) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
+    if (currentNoteId) saveCurrentNote();
+    notePanelOpen = false;
+    currentNoteId = null;
+    document.getElementById('notePanel').classList.add('hidden');
+    document.getElementById('notePanel').innerHTML = '';
+  }
+  // Refresh fullscreen right panel note list
+  refreshNotePanel();
 }
 
 window.viewerRotate = function(deg) {
@@ -1326,6 +1374,110 @@ window.closeViewer = function() {
   document.getElementById('eraserToolBtn').classList.remove('active-tool');
   if (isFullscreen) exitFullscreen();
   renderAll();
+};
+
+/* ========== Note Panel Refresh ========== */
+function refreshNotePanel() {
+  const list = document.getElementById('fsPanelNoteList');
+  if (!list) return;
+  const mat = currentViewerMaterial;
+  if (!mat) { list.innerHTML = ''; return; }
+  const pageNotes = (mat.notes && mat.notes[String(viewerCurrentPage)]) || [];
+  if (pageNotes.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:#666;padding:6px">No notes yet</div>';
+  } else {
+    list.innerHTML = pageNotes.map(n =>
+      '<div class="fs-note-item ' + (n.id === currentNoteId ? 'active' : '') + '" onclick="openSpecificNote(\'' + n.id + '\')">' +
+      '<span>' + (n.type === 'imported' ? '⇧' : '✎') + '</span>' +
+      '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + n.title + '</span>' +
+      '<button class="note-delete" onclick="event.stopPropagation();deleteNote(\'' + n.id + '\')">×</button>' +
+      '</div>'
+    ).join('');
+  }
+}
+
+window.deleteNote = function(noteId) {
+  const mat = currentViewerMaterial;
+  if (!mat || !mat.notes) return;
+  const key = String(viewerCurrentPage);
+  if (!mat.notes[key]) return;
+  mat.notes[key] = mat.notes[key].filter(n => n.id !== noteId);
+  if (mat.notes[key].length === 0) delete mat.notes[key];
+  saveMaterials();
+  if (currentNoteId === noteId) {
+    currentNoteId = null; notePanelOpen = false;
+    document.getElementById('notePanel').classList.add('hidden');
+    document.getElementById('notePanel').innerHTML = '';
+  }
+  refreshNotePanel();
+  showToast('Note deleted');
+};
+
+/* ========== Notes Management View ========== */
+window.openNotesManagement = function() {
+  if (materials.length === 0) { showToast('No materials to manage notes for'); return; }
+  // Use first material or currently viewed one
+  const mat = currentViewerMaterial || materials[0];
+  if (!mat && materials.length > 0) return;
+  notesViewOpen = true;
+  document.getElementById('mainView').classList.add('hidden');
+  document.getElementById('trashView').classList.add('hidden');
+  document.getElementById('notesMgmtView').classList.remove('hidden');
+  document.querySelector('.topbar-title').textContent = '✎ Notes Management';
+  renderNotesManagement(mat);
+};
+
+window.closeNotesManagement = function() {
+  notesViewOpen = false;
+  document.getElementById('mainView').classList.remove('hidden');
+  document.getElementById('notesMgmtView').classList.add('hidden');
+  document.querySelector('.topbar-title').textContent = '资料柜 · Cabinet';
+};
+
+function renderNotesManagement(mat) {
+  if (!mat) return;
+  document.getElementById('notesMgmtSubtitle').textContent = 'All notes for: ' + mat.name;
+  const container = document.getElementById('notesMgmtContent');
+  const allNotes = mat.notes || {};
+  const pages = Object.keys(allNotes).map(Number).sort((a,b) => a-b);
+
+  if (pages.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>No notes in this document</p></div>';
+    return;
+  }
+
+  container.innerHTML = pages.map(pg => {
+    const notes = allNotes[pg] || [];
+    return '<div class="note-group">' +
+      '<div class="note-group-label">Page ' + pg + '</div>' +
+      notes.map(n =>
+        '<div class="note-row" onclick="jumpToNote(\'' + mat.id + '\', ' + pg + ', \'' + n.id + '\')">' +
+        '<span class="note-icon">' + (n.type === 'imported' ? '⇧' : '✎') + '</span>' +
+        '<span class="note-title">' + n.title + '</span>' +
+        '<span class="note-jump">Jump →</span>' +
+        '</div>'
+      ).join('') +
+      '</div>';
+  }).join('');
+}
+
+window.jumpToNote = function(matId, pageNum, noteId) {
+  closeNotesManagement();
+  window.openMaterial(matId);
+  // Need to wait for viewer to open, then navigate
+  setTimeout(() => {
+    if (viewerPdfDoc || docxPageData[matId]) {
+      viewerCurrentPage = pageNum;
+      goToViewerPage(pageNum);
+    }
+    setTimeout(() => {
+      currentNoteId = noteId;
+      currentNotePage = pageNum;
+      notePanelOpen = true;
+      openNotePanel(pageNum);
+      refreshNotePanel();
+    }, 300);
+  }, 200);
 };
 
 window.deleteMaterial = function() {
@@ -1364,8 +1516,9 @@ window.zoomReset = function() {
 
 /* ========== Pan ========== */
 function startPan(e) {
-  if (penToolActive) return;
-  if (e.target.closest('.pen-canvas')) return;
+  if (penToolActive || eraserActive) return;
+  if (!isFullscreen) return;
+  if (e.button !== 0) return;
   isPanning = true;
   panStartX = e.clientX - panX;
   panStartY = e.clientY - panY;
@@ -1373,6 +1526,7 @@ function startPan(e) {
   if (pw) pw.classList.add('panning');
   document.addEventListener('mousemove', doPan);
   document.addEventListener('mouseup', stopPan);
+  e.preventDefault();
 }
 
 function doPan(e) {
@@ -1412,6 +1566,7 @@ function enterFullscreen() {
   document.body.classList.add('fullscreen-active');
   document.getElementById('fsRightTrigger').classList.remove('hidden');
   document.getElementById('viewerBody').addEventListener('wheel', onScrollWheel, { passive: false });
+  document.getElementById('viewerBody').addEventListener('mousedown', startPan);
   panX = 0; panY = 0;
   goToViewerPage(viewerCurrentPage);
 }
@@ -1422,6 +1577,7 @@ function exitFullscreen() {
   document.getElementById('fsRightTrigger').classList.add('hidden');
   document.getElementById('fsRightPanel').classList.remove('open');
   document.getElementById('viewerBody').removeEventListener('wheel', onScrollWheel);
+  document.getElementById('viewerBody').removeEventListener('mousedown', startPan);
   panX = 0; panY = 0;
   goToViewerPage(viewerCurrentPage);
 }
@@ -1493,7 +1649,43 @@ window.addBlankPage = function() {
 };
 
 window.addNoteFromFS = function() {
-  toggleNotePanel();
+  showNewNoteDialog();
+};
+
+window.showNewNoteDialog = function() {
+  const overlay = document.createElement('div');
+  overlay.className = 'note-title-dialog';
+  overlay.id = 'noteTitleDialog';
+  overlay.innerHTML =
+    '<div class="dialog-box">' +
+    '<h4>New Note</h4>' +
+    '<input id="newNoteTitle" placeholder="Note title (optional)" autofocus>' +
+    '<div class="dialog-btns">' +
+    '<button onclick="document.getElementById(\'noteTitleDialog\').remove()">Cancel</button>' +
+    '<button class="btn-primary" onclick="createNewNote()">Create</button>' +
+    '</div></div>';
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('newNoteTitle').focus(), 50);
+};
+
+window.createNewNote = function() {
+  const titleInput = document.getElementById('newNoteTitle');
+  const title = (titleInput && titleInput.value.trim()) || ('Note ' + (Object.keys(currentViewerMaterial?.notes || {}).length + 1));
+  const noteId = 'n_' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
+  const mat = currentViewerMaterial;
+  if (!mat) return;
+  if (!mat.notes) mat.notes = {};
+  const key = String(viewerCurrentPage);
+  if (!mat.notes[key]) mat.notes[key] = [];
+  mat.notes[key].push({ id: noteId, title: title, type: 'handwriting', strokes: [], createdAt: Date.now() });
+  saveMaterials();
+  // Close dialog
+  const dlg = document.getElementById('noteTitleDialog');
+  if (dlg) dlg.remove();
+  // Refresh panel and open note
+  refreshNotePanel();
+  openSpecificNote(noteId);
 };
 
 window.deleteCurrentPage = function() {
@@ -1615,25 +1807,69 @@ function updateTrashBadge() {
 window.toggleNotePanel = function() {
   if (notePanelOpen) {
     if (noteCanvas && currentViewerMaterial) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
-    notePanelOpen = false;
+    if (currentNoteId) saveCurrentNote();
+    notePanelOpen = false; currentNoteId = null;
     document.getElementById('notePanel').classList.add('hidden');
     document.getElementById('notePanel').innerHTML = '';
+    refreshNotePanel();
   } else {
     notePanelOpen = true;
     currentNotePage = viewerCurrentPage;
-    openNotePanel(currentNotePage);
+    // If no specific note, open first or create new
+    const mat = currentViewerMaterial;
+    const pageNotes = (mat && mat.notes && mat.notes[String(currentNotePage)]) || [];
+    if (currentNoteId && pageNotes.find(n => n.id === currentNoteId)) {
+      openNotePanel(currentNotePage);
+    } else if (pageNotes.length > 0) {
+      currentNoteId = pageNotes[0].id;
+      openNotePanel(currentNotePage);
+    } else {
+      // No notes on this page yet
+      notePanelOpen = false;
+      document.getElementById('notePanel').classList.add('hidden');
+      showToast('No notes on this page. Use right panel to add one.');
+    }
   }
 };
+
+window.openSpecificNote = function(noteId) {
+  currentNoteId = noteId;
+  currentNotePage = viewerCurrentPage;
+  notePanelOpen = true;
+  openNotePanel(currentNotePage);
+};
+
+function saveCurrentNote() {
+  if (!currentNoteId || !currentViewerMaterial) return;
+  const mat = currentViewerMaterial;
+  if (!mat.notes) mat.notes = {};
+  const pageNotes = mat.notes[String(currentNotePage)] || [];
+  const idx = pageNotes.findIndex(n => n.id === currentNoteId);
+  if (idx === -1) return;
+  if (noteCanvas) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
+  if (noteStrokes.length > 0) {
+    pageNotes[idx].strokes = JSON.parse(JSON.stringify(noteStrokes));
+    pageNotes[idx].type = 'handwriting';
+  }
+  mat.notes[String(currentNotePage)] = pageNotes;
+  saveMaterials();
+}
 
 function openNotePanel(pageNum) {
   const panel = document.getElementById('notePanel');
   panel.classList.remove('hidden');
   const mat = currentViewerMaterial;
   if (!mat) return;
+
+  // Find current note
+  const pageNotes = (mat.notes && mat.notes[String(pageNum)]) || [];
+  const note = pageNotes.find(n => n.id === currentNoteId);
+  const title = note ? note.title : 'Note';
+
   panel.innerHTML =
     '<div class="note-panel-header">' +
-    '<h4>Notes - Page ' + pageNum + '</h4>' +
-    '<button class="close-btn" onclick="document.getElementById(\'notePanel\').classList.add(\'hidden\'); notePanelOpen = false;">✕</button>' +
+    '<h4 id="notePanelTitle" contenteditable="true" style="cursor:text;outline:none;border-bottom:1px dashed transparent;padding:2px 0" onblur="renameNote()" onkeydown="if(event.key===\'Enter\'){this.blur();event.preventDefault()}">' + title + '</h4>' +
+    '<button class="close-btn" onclick="closeNotePanel()">✕</button>' +
     '</div>' +
     '<div class="note-mode-select">' +
     '<div class="note-mode-btn ' + (noteMode === 'handwrite' ? 'active' : '') + '" onclick="setNoteMode(\'handwrite\')">✎ Handwrite</div>' +
@@ -1642,6 +1878,27 @@ function openNotePanel(pageNum) {
     '<div id="noteContentArea" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>';
   renderNoteContent(pageNum);
 }
+
+window.renameNote = function() {
+  if (!currentNoteId || !currentViewerMaterial) return;
+  const el = document.getElementById('notePanelTitle');
+  if (!el) return;
+  const newTitle = el.textContent.trim();
+  if (!newTitle) { el.textContent = 'Untitled'; return; }
+  const mat = currentViewerMaterial;
+  const pageNotes = (mat.notes && mat.notes[String(currentNotePage)]) || [];
+  const note = pageNotes.find(n => n.id === currentNoteId);
+  if (note) { note.title = newTitle; saveMaterials(); refreshNotePanel(); }
+};
+
+window.closeNotePanel = function() {
+  if (noteCanvas && currentViewerMaterial) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
+  if (currentNoteId) saveCurrentNote();
+  notePanelOpen = false; currentNoteId = null;
+  document.getElementById('notePanel').classList.add('hidden');
+  document.getElementById('notePanel').innerHTML = '';
+  refreshNotePanel();
+};
 
 window.setNoteMode = function(mode) { noteMode = mode; renderNoteContent(currentNotePage); };
 
@@ -1703,10 +1960,11 @@ function initNoteCanvas(pageNum) {
     img.src = savedNoteImages[pageNum];
   } else {
     const mat = currentViewerMaterial;
-    if (mat && mat.notes) {
+    if (mat && mat.notes && currentNoteId) {
       const pageNotes = mat.notes[String(pageNum)] || [];
-      const hw = pageNotes.find(n => n.type === 'handwriting');
-      if (hw && hw.strokes) { noteStrokes = hw.strokes; redrawNoteStrokes(); }
+      const note = pageNotes.find(n => n.id === currentNoteId);
+      if (note && note.strokes && note.strokes.length > 0) { noteStrokes = note.strokes; redrawNoteStrokes(); }
+      else if (note && note.type === 'handwriting' && (!note.strokes || note.strokes.length === 0)) { /* fresh note, start empty */ }
     }
   }
 
@@ -1772,29 +2030,44 @@ window.clearNoteCanvas = function() { if (!noteCtx||!noteCanvas) return; noteCtx
 window.saveNoteToMaterial = function() {
   const mat = currentViewerMaterial; if (!mat) return;
   if (!mat.notes) mat.notes = {};
+  if (!currentNoteId) { showToast('No note selected'); return; }
   const key = String(currentNotePage);
   let pageNotes = mat.notes[key] || [];
+  const idx = pageNotes.findIndex(n => n.id === currentNoteId);
+  if (idx === -1) return;
+
   if (noteMode === 'handwrite') {
-    pageNotes = pageNotes.filter(n => n.type !== 'handwriting');
-    if (noteStrokes.length > 0) pageNotes.push({ type:'handwriting', strokes:JSON.parse(JSON.stringify(noteStrokes)) });
+    if (noteStrokes.length > 0) {
+      pageNotes[idx].strokes = JSON.parse(JSON.stringify(noteStrokes));
+      pageNotes[idx].type = 'handwriting';
+    }
   }
   mat.notes[key] = pageNotes;
-  saveMaterials(); showToast('Note saved for page ' + currentNotePage);
+  saveMaterials();
+  refreshNotePanel();
+  showToast('Note saved');
 };
 
 window.handleNoteFileImport = function(event) {
   const file = event.target.files[0]; if (!file) return;
+  if (!currentNoteId) { showToast('No note selected'); return; }
   const reader = new FileReader();
   reader.onload = function(e) {
     const mat = currentViewerMaterial; if (!mat) return;
     if (!mat.notes) mat.notes = {};
     const key = String(currentNotePage);
     let pageNotes = mat.notes[key] || [];
-    pageNotes = pageNotes.filter(n => n.type !== 'imported');
-    pageNotes.push({ type:'imported', data:e.target.result, fileType:file.name.endsWith('.pdf')?'pdf':'png' });
+    const idx = pageNotes.findIndex(n => n.id === currentNoteId);
+    if (idx === -1) return;
+    pageNotes[idx].type = 'imported';
+    pageNotes[idx].data = e.target.result;
+    pageNotes[idx].fileType = file.name.endsWith('.pdf') ? 'pdf' : 'png';
+    pageNotes[idx].strokes = [];
     mat.notes[key] = pageNotes;
-    saveMaterials(); renderNoteContent(currentNotePage);
-    showToast('File imported as note');
+    saveMaterials();
+    refreshNotePanel();
+    renderNoteContent(currentNotePage);
+    showToast('File imported to note');
   };
   reader.readAsDataURL(file); event.target.value = '';
 };
@@ -1907,6 +2180,17 @@ window.togglePenTool = togglePenTool;
 window.toggleEraser = toggleEraser;
 window.setPenColor = setPenColor;
 window.undoPenStroke = undoPenStroke;
+window.refreshNotePanel = refreshNotePanel;
+window.showNewNoteDialog = showNewNoteDialog;
+window.createNewNote = createNewNote;
+window.openSpecificNote = openSpecificNote;
+window.deleteNote = deleteNote;
+window.renameNote = renameNote;
+window.closeNotePanel = closeNotePanel;
+window.openNotesManagement = openNotesManagement;
+window.closeNotesManagement = closeNotesManagement;
+window.jumpToNote = jumpToNote;
+window.deleteCurrentPage = deleteCurrentPage;
 
 init();
 </script>
