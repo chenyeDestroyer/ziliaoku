@@ -281,6 +281,11 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 .trash-card .trash-actions .btn-restore:hover { background:#10b981; color:#fff; border-color:#10b981; }
 .trash-card .trash-actions .btn-delete:hover { background:var(--delete-red); color:#fff; border-color:var(--delete-red); }
 
+.trash-drop-zone { height:48px; border:2px dashed var(--border); border-radius:var(--radius); margin:12px; display:flex; align-items:center; justify-content:center; gap:8px; color:var(--text-secondary); opacity:0.3; transition:all var(--transition); cursor:default; }
+.trash-drop-zone.drag-over { opacity:1; border-color:var(--delete-red); background:rgba(229,57,53,0.08); color:var(--delete-red); }
+.trash-drop-zone .trash-drop-icon { font-size:20px; }
+.trash-drop-zone .trash-drop-label { font-size:12px; }
+
 /* ====== Settings ====== */
 .settings-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); animation:fadeIn 0.2s ease; }
 .settings-panel { background:var(--bg-card); border-radius:var(--radius-lg); width:400px; max-height:78vh; overflow-y:auto; box-shadow:var(--shadow-lg); animation:slideUp 0.25s ease; }
@@ -362,6 +367,7 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 .note-thumb-pdf { width:100%; height:80px; background:#fef3c7; display:flex; align-items:center; justify-content:center; border-radius:3px; font-size:13px; color:#92400e; }
 .note-thumb-sketch { width:100%; height:80px; background:#e8f4f8; display:flex; align-items:center; justify-content:center; border-radius:3px; font-size:13px; color:#1e40af; }
 .note-thumb-empty { width:100%; height:80px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; border-radius:3px; font-size:13px; color:#999; }
+.note-thumb-canvas { width:100%; height:80px; border-radius:3px; background:#fff; border:1px solid #eee; }
 .note-thumb-title { font-size:11px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .note-thumb-meta { font-size:9px; color:var(--text-secondary); }
 .notes-mgmt .note-row:hover { background:var(--accent-light); border-color:var(--accent); }
@@ -380,6 +386,7 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 
 .hidden { display:none !important; }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 
 <body data-theme="rhine" data-mode="light">
@@ -407,7 +414,7 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 
 <main class="main">
   <header class="topbar">
-    <span class="topbar-title">资料柜 · Cabinet</span>
+    <span class="topbar-title" onclick="goHome()" style="cursor:pointer;transition:opacity 0.2s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">Rhein Lab</span>
     <span class="topbar-spacer"></span>
     <button class="topbar-btn" onclick="toggleSettings()" title="设置">⚙</button>
   </header>
@@ -450,8 +457,25 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
         <div id="notesMgmtContent"></div>
       </div>
     </div>
+    <!-- Trash drop zone -->
+    <div id="trashDropZone" class="trash-drop-zone">
+      <div class="trash-drop-icon">♻</div>
+      <div class="trash-drop-label">拖到此处删除</div>
+    </div>
   </div>
 </main>
+
+<!-- Smart Summary overlay -->
+<div id="smartSummaryOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;cursor:crosshair;">
+  <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:var(--bg-card);padding:8px 20px;border-radius:20px;font-size:13px;color:var(--text-primary);box-shadow:var(--shadow-lg);z-index:501">
+    框选需要识别的区域，按 Enter 确认，Esc 取消
+  </div>
+  <div id="smartSelectBox" style="position:absolute;border:2px dashed var(--accent);background:rgba(59,125,216,0.08);display:none;pointer-events:none;z-index:500;"></div>
+  <div id="smartSummaryLoading" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-card);padding:20px 30px;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);text-align:center;z-index:502">
+    <div style="font-size:24px;margin-bottom:8px">🤖</div>
+    <div id="smartSummaryStatus">识别中...</div>
+  </div>
+</div>
 
 <!-- Viewer -->
 <div class="viewer-overlay hidden" id="viewerOverlay">
@@ -472,6 +496,7 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
         <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:4px">页面操作</div>
         <button onclick="showNewNoteDialog()">+ 新建笔记</button>
         <button onclick="openNotesManagement()">📋 全局笔记管理</button>
+        <button onclick="startSmartSummary()">🤖 智能总结</button>
         <div style="font-size:11px;color:#888;letter-spacing:1px;margin:10px 0 4px" id="fsPanelNotesLabel">页面笔记</div>
         <div id="fsPanelNoteList" style="display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto"></div>
       </div>
@@ -749,7 +774,7 @@ function onDragStart(e) {
   dragState.longPressTimer = setTimeout(() => {
     dragState.longPressTriggered = true;
     startDragging(cx, cy);
-  }, 1000);
+  }, 450);
 
   card.classList.add('long-pressing');
   document.addEventListener('mousemove', onDragMove);
@@ -786,6 +811,16 @@ function onDragMove(e) {
   const ar = area.getBoundingClientRect();
   dragState.cardEl.style.left = Math.max(0, cx - ar.left - dragState.offsetX) + 'px';
   dragState.cardEl.style.top = Math.max(0, cy - ar.top - dragState.offsetY) + 'px';
+  // Check trash drop zone
+  const tdz = document.getElementById('trashDropZone');
+  if (tdz) {
+    const tr = tdz.getBoundingClientRect();
+    if (cy >= tr.top && cy <= tr.bottom && cx >= tr.left && cx <= tr.right) {
+      tdz.classList.add('drag-over');
+    } else {
+      tdz.classList.remove('drag-over');
+    }
+  }
 }
 
 function onDragEnd() {
@@ -796,8 +831,33 @@ function onDragEnd() {
 
   if (dragState.longPressTimer) { clearTimeout(dragState.longPressTimer); dragState.longPressTimer = null; }
 
+  // Clear trash zone highlight
+  const tdz = document.getElementById('trashDropZone');
+  if (tdz) tdz.classList.remove('drag-over');
+  
   if (dragState.active) {
     dragState.cardEl.classList.remove('dragging');
+    // Check if dropped on trash zone
+    if (tdz) {
+      const tr = tdz.getBoundingClientRect();
+      const cardRect = dragState.cardEl.getBoundingClientRect();
+      const cardCenterY = cardRect.top + cardRect.height / 2;
+      if (cardCenterY >= tr.top && cardCenterY <= tr.bottom) {
+        // Drop on trash - delete the material
+        const idx = materials.findIndex(m => m.id === dragState.materialId);
+        if (idx !== -1) {
+          const [deleted] = materials.splice(idx, 1);
+          deleted.deletedAt = Date.now();
+          trash.push(deleted);
+          saveMaterials(); saveTrash();
+          renderAll();
+          showToast('已移至回收站');
+          dragState.active = false; dragState.materialId = null;
+          dragState.cardEl = null; dragState.longPressTriggered = false;
+          return;
+        }
+      }
+    }
     const mat = materials.find(m => m.id === dragState.materialId);
     if (mat) {
       mat.x = parseInt(dragState.cardEl.style.left) || dragState.origX;
@@ -1436,6 +1496,9 @@ window.deleteNote = function(noteId) {
 /* ========== Notes Management View ========== */
 window.openNotesManagement = function() {
   if (materials.length === 0) { showToast('No materials to manage notes for'); return; }
+  // Exit fullscreen and close viewer if open
+  if (isFullscreen) exitFullscreen();
+  if (currentViewerMaterial) closeViewer();
   // Use first material or currently viewed one
   const mat = currentViewerMaterial || materials[0];
   if (!mat && materials.length > 0) return;
@@ -1443,7 +1506,8 @@ window.openNotesManagement = function() {
   document.getElementById('mainView').classList.add('hidden');
   document.getElementById('trashView').classList.add('hidden');
   document.getElementById('notesMgmtView').classList.remove('hidden');
-  document.querySelector('.topbar-title').textContent = '✎ Notes Management';
+  document.querySelector('.topbar-title').textContent = '✎ 笔记管理';
+  currentViewerMaterial = mat;
   renderNotesManagement(mat);
 };
 
@@ -1480,7 +1544,7 @@ function renderNotesManagement(mat) {
             thumbHtml = '<img src="' + n.data + '" class="note-thumb-img" loading="lazy">';
           }
         } else if (n.strokes && n.strokes.length > 0) {
-          thumbHtml = '<div class="note-thumb-sketch">✎ 手写笔记</div>';
+          thumbHtml = '<canvas class="note-thumb-canvas" width="140" height="90" data-strokes="' + encodeURIComponent(JSON.stringify(n.strokes)) + '"></canvas>';
         } else {
           thumbHtml = '<div class="note-thumb-empty">✎ 空笔记</div>';
         }
@@ -1496,6 +1560,7 @@ function renderNotesManagement(mat) {
       }).join('') +
       '</div></div>';
   }).join('');
+  setTimeout(() => renderNoteThumbnails(), 150);
 }
 
 window.jumpToNote = function(matId, pageNum, noteId) {
@@ -1519,9 +1584,12 @@ window.jumpToNote = function(matId, pageNum, noteId) {
 // Global note drag-drop in management view
 let noteDragData = null;
 window.noteThumbDragStart = function(e) {
-  noteDragData = { noteId: e.target.closest('.note-thumb-card').dataset.noteId, page: e.target.closest('.note-thumb-card').dataset.page, idx: e.target.closest('.note-thumb-card').dataset.idx };
-  e.target.closest('.note-thumb-card').classList.add('dragging');
+  const card = e.target.closest('.note-thumb-card');
+  if (!card) return;
+  noteDragData = { noteId: card.dataset.noteId, page: card.dataset.page, idx: card.dataset.idx };
+  card.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', card.dataset.noteId);
 };
 window.noteThumbDragOver = function(e) {
   e.preventDefault();
@@ -1535,10 +1603,20 @@ window.noteThumbDragEnd = function(e) {
 };
 window.noteThumbDrop = function(e) {
   e.preventDefault();
+  e.stopPropagation();
   document.querySelectorAll('.note-thumb-card').forEach(c => c.classList.remove('drag-over'));
   const target = e.target.closest('.note-thumb-card');
   if (!target || !noteDragData) return;
-  const mat = currentViewerMaterial;
+  // Find the material - use currentViewerMaterial or search
+  let mat = currentViewerMaterial;
+  if (!mat) {
+    // Try to find from the notes management context
+    const subtitle = document.getElementById('notesMgmtSubtitle');
+    if (subtitle) {
+      const matName = subtitle.textContent.replace('All notes for: ', '');
+      mat = materials.find(m => m.name === matName);
+    }
+  }
   if (!mat || !mat.notes) return;
   const tgtPage = parseInt(target.dataset.page);
   const tgtIdx = parseInt(target.dataset.idx);
@@ -2002,6 +2080,32 @@ function openNotePanel(pageNum) {
   initNoteResize();
 }
 
+function renderNoteThumbnails() {
+  document.querySelectorAll('.note-thumb-canvas').forEach(canvas => {
+    try {
+      const strokes = JSON.parse(decodeURIComponent(canvas.dataset.strokes));
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const scaleX = canvas.width / 420;
+      const scaleY = canvas.height / 560;
+      for (const stroke of strokes) {
+        if (stroke.length < 2) continue;
+        ctx.beginPath();
+        ctx.strokeStyle = stroke[0].color;
+        ctx.lineWidth = Math.max(1, stroke[0].lineWidth * scaleX);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.moveTo(stroke[0].x * scaleX, stroke[0].y * scaleY);
+        for (let i = 1; i < stroke.length; i++) {
+          ctx.lineTo(stroke[i].x * scaleX, stroke[i].y * scaleY);
+        }
+        ctx.stroke();
+      }
+    } catch(e) {}
+  });
+}
+
 window.renameNote = function() {
   if (!currentNoteId || !currentViewerMaterial) return;
   const el = document.getElementById('notePanelTitle');
@@ -2183,6 +2287,231 @@ function drawNoteFormatLines() {
   noteCtx.restore();
 }
 
+// Smart Summary - OCR + AI
+let smartSelecting = false;
+let smartSelX = 0, smartSelY = 0, smartSelW = 0, smartSelH = 0;
+let smartSelStartX = 0, smartSelStartY = 0;
+const DEEPSEEK_KEY = 'sk-c7d43383abe343a6954a295eb67562ae';
+
+window.startSmartSummary = function() {
+  if (!currentViewerMaterial) { showToast('请先打开资料'); return; }
+  // Close right panel
+  document.getElementById('fsRightPanel').classList.remove('open');
+  const overlay = document.getElementById('smartSummaryOverlay');
+  overlay.classList.remove('hidden');
+  smartSelecting = false;
+  document.getElementById('smartSelectBox').style.display = 'none';
+  document.getElementById('smartSummaryLoading').classList.add('hidden');
+  overlay.onmousedown = onSmartSelStart;
+  overlay.onmousemove = onSmartSelMove;
+  overlay.onmouseup = onSmartSelEnd;
+  overlay.onkeydown = onSmartKey;
+  overlay.focus();
+};
+
+function onSmartSelStart(e) {
+  if (e.target.closest('#smartSummaryLoading')) return;
+  smartSelecting = true;
+  const rect = e.currentTarget.getBoundingClientRect();
+  smartSelStartX = e.clientX - rect.left;
+  smartSelStartY = e.clientY - rect.top;
+  const box = document.getElementById('smartSelectBox');
+  box.style.display = 'block';
+  box.style.left = smartSelStartX + 'px';
+  box.style.top = smartSelStartY + 'px';
+  box.style.width = '1px';
+  box.style.height = '1px';
+}
+
+function onSmartSelMove(e) {
+  if (!smartSelecting) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  const box = document.getElementById('smartSelectBox');
+  smartSelX = Math.min(smartSelStartX, cx);
+  smartSelY = Math.min(smartSelStartY, cy);
+  smartSelW = Math.abs(cx - smartSelStartX);
+  smartSelH = Math.abs(cy - smartSelStartY);
+  box.style.left = smartSelX + 'px';
+  box.style.top = smartSelY + 'px';
+  box.style.width = smartSelW + 'px';
+  box.style.height = smartSelH + 'px';
+}
+
+function onSmartSelEnd(e) {
+  if (!smartSelecting) return;
+  smartSelecting = false;
+  if (smartSelW < 10 || smartSelH < 10) return;
+  // Auto-confirm on mouse up with valid selection
+  confirmSmartSummary();
+}
+
+function onSmartKey(e) {
+  if (e.key === 'Enter' && smartSelW > 10 && smartSelH > 10) {
+    confirmSmartSummary();
+  } else if (e.key === 'Escape') {
+    cancelSmartSummary();
+  }
+}
+
+function cancelSmartSummary() {
+  const overlay = document.getElementById('smartSummaryOverlay');
+  overlay.classList.add('hidden');
+  overlay.onmousedown = null;
+  overlay.onmousemove = null;
+  overlay.onmouseup = null;
+  overlay.onkeydown = null;
+  smartSelecting = false;
+}
+
+async function confirmSmartSummary() {
+  const overlay = document.getElementById('smartSummaryOverlay');
+  const loading = document.getElementById('smartSummaryLoading');
+  const status = document.getElementById('smartSummaryStatus');
+  loading.classList.remove('hidden');
+  overlay.onmousedown = null;
+  overlay.onmousemove = null;
+  overlay.onmouseup = null;
+  document.getElementById('smartSelectBox').style.display = 'none';
+
+  try {
+    // Capture the selected area from the viewer
+    status.textContent = '正在截取区域...';
+    const viewerContent = document.getElementById('viewerContent');
+    const vcRect = viewerContent.getBoundingClientRect();
+    
+    // Use html2canvas-like approach: get the page canvas
+    const pageCanvas = document.getElementById('pageCanvas');
+    const penCanvas = document.getElementById('penCanvas');
+    let imageData = null;
+    
+    if (pageCanvas) {
+      // Create a composite canvas
+      const compCanvas = document.createElement('canvas');
+      compCanvas.width = pageCanvas.width;
+      compCanvas.height = pageCanvas.height;
+      const ctx = compCanvas.getContext('2d');
+      ctx.drawImage(pageCanvas, 0, 0);
+      if (penCanvas) ctx.drawImage(penCanvas, 0, 0);
+      
+      // Calculate the selection relative to page canvas
+      const pageRect = pageCanvas.getBoundingClientRect();
+      const scaleX = pageCanvas.width / pageRect.width;
+      const scaleY = pageCanvas.height / pageRect.height;
+      const sx = Math.max(0, (smartSelX - pageRect.left + overlay.getBoundingClientRect().left) * scaleX);
+      const sy = Math.max(0, (smartSelY - pageRect.top + overlay.getBoundingClientRect().top) * scaleY);
+      const sw = Math.min(pageCanvas.width - sx, smartSelW * scaleX);
+      const sh = Math.min(pageCanvas.height - sy, smartSelH * scaleY);
+      
+      if (sw > 0 && sh > 0) {
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = sw;
+        cropCanvas.height = sh;
+        cropCanvas.getContext('2d').drawImage(compCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+        imageData = cropCanvas.toDataURL('image/png');
+      }
+    }
+    
+    if (!imageData) {
+      // Fallback: try to capture the docx page div
+      const docxPage = document.querySelector('.docx-page');
+      if (docxPage) {
+        // For docx, use a simpler approach - just get the visible text
+        imageData = null;
+      }
+    }
+
+    if (imageData) {
+      // OCR with Tesseract
+      status.textContent = '正在进行OCR识别...';
+      const { data: { text } } = await Tesseract.recognize(imageData, 'chi_sim+eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            status.textContent = 'OCR识别中... ' + Math.round(m.progress * 100) + '%';
+          }
+        }
+      });
+      
+      const ocrText = text.trim();
+      if (!ocrText) {
+        status.textContent = '未识别到文字';
+        setTimeout(cancelSmartSummary, 1500);
+        return;
+      }
+      
+      // AI Summary with DeepSeek
+      status.textContent = '正在AI总结...';
+      const summary = await callDeepSeek(ocrText);
+      
+      // Create a note with the summary
+      addSmartSummaryNote(ocrText, summary, imageData);
+    } else {
+      status.textContent = '无法截取区域内容，请重试';
+      setTimeout(cancelSmartSummary, 1500);
+    }
+  } catch(e) {
+    console.error('Smart summary error:', e);
+    status.textContent = '错误: ' + e.message;
+    setTimeout(cancelSmartSummary, 2000);
+  }
+}
+
+async function callDeepSeek(text) {
+  const prompt = '请用简洁的中文总结以下内容，提取关键要点，使用要点列表格式，控制在200字以内：\n\n' + text.substring(0, 3000);
+  const resp = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + DEEPSEEK_KEY },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+      temperature: 0.3
+    })
+  });
+  if (!resp.ok) throw new Error('AI API error: ' + resp.status);
+  const data = await resp.json();
+  return data.choices[0].message.content;
+}
+
+function addSmartSummaryNote(ocrText, summary, imageData) {
+  const mat = currentViewerMaterial;
+  if (!mat) return;
+  if (!mat.notes) mat.notes = {};
+  const key = String(viewerCurrentPage);
+  if (!mat.notes[key]) mat.notes[key] = [];
+  
+  const noteId = 'n_' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
+  mat.notes[key].push({
+    id: noteId,
+    title: '智能总结 - 第' + viewerCurrentPage + '页',
+    type: 'imported',
+    data: imageData,
+    fileType: 'png',
+    strokes: [],
+    createdAt: Date.now(),
+    ocrText: ocrText,
+    aiSummary: summary
+  });
+  saveMaterials();
+  
+  // Close overlay, refresh and open the note
+  cancelSmartSummary();
+  
+  // Open the note panel with this new note
+  currentNoteId = noteId;
+  currentNotePage = viewerCurrentPage;
+  notePanelOpen = true;
+  openNotePanel(viewerCurrentPage);
+  refreshNotePanel();
+  
+  // Switch to import mode to show the content
+  noteMode = 'import';
+  renderNoteContent(viewerCurrentPage);
+  
+  showToast('智能总结已生成');
+}
+
 window.saveNoteToMaterial = function() {
   const mat = currentViewerMaterial; if (!mat) return;
   if (!mat.notes) mat.notes = {};
@@ -2247,6 +2576,17 @@ window.setTheme = function(theme) {
   const el = document.querySelector('.theme-pick[data-theme="' + theme + '"]');
   if (el) el.classList.add('active');
   saveSettings({ fontSize:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size-base')), theme:theme, mode:document.body.getAttribute('data-mode') });
+};
+
+window.goHome = function() {
+  if (isFullscreen) exitFullscreen();
+  if (currentViewerMaterial) closeViewer();
+  if (notesViewOpen) closeNotesManagement();
+  document.getElementById('mainView').classList.remove('hidden');
+  document.getElementById('trashView').classList.add('hidden');
+  document.getElementById('notesMgmtView').classList.add('hidden');
+  document.querySelector('.topbar-title').textContent = 'Rhein Lab';
+  renderAll();
 };
 
 window.toggleMode = function() {
