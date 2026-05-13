@@ -1,572 +1,343 @@
-﻿
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rhein Lab ? Document System</title>
+<title>Rhein Lab \u00b7 Document System</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 <style>
 :root {
-  --bg-main: #f5f7fa;
-  --bg-card: #ffffff;
-  --bg-viewer: #e8ecf1;
-  --bg-sidebar: #1a2332;
-  --text-primary: #1a1a2e;
-  --text-secondary: #5a6577;
-  --text-sidebar: #c8d6e5;
-  --text-sidebar-active: #ffffff;
-  --accent: #4a90d9;
-  --accent-light: #e8f0fe;
-  --accent-glow: rgba(74,144,217,0.15);
-  --border: #d5dce6;
-  --shadow: 0 2px 12px rgba(0,0,0,0.06);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
-  --radius: 8px;
-  --radius-lg: 14px;
-  --font-size-base: 14px;
-  --font-size-sm: 12px;
-  --font-size-lg: 16px;
-  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --sidebar-width: 260px;
-  --trigger-width: 12px;
+  --bg-main: #f4f6f9; --bg-card: #ffffff; --bg-sidebar: #1c2838;
+  --text-primary: #1a1f2e; --text-secondary: #5a6577;
+  --text-sidebar: #bcc8d6; --text-sidebar-active: #ffffff;
+  --accent: #3b7dd8; --accent-light: #e6f0fa; --accent-dark: #265d9e;
+  --accent-glow: rgba(59,125,216,0.10);
+  --border: #d5dce6; --border-light: #e8ecf1;
+  --shadow: 0 2px 12px rgba(0,0,0,0.05); --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+  --radius: 8px; --radius-lg: 14px;
+  --font-size-base: 14px; --font-size-sm: 12px; --font-size-lg: 16px;
+  --font-size-xl: 20px; --font-size-xxl: 26px;
+  --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+  --sidebar-width: 260px; --trigger-width: 14px;
+  --delete-red: #e53935;
 }
 
-/* ====== Macaron Themes ====== */
-[data-theme="default"] {
-  --bg-main: #f5f7fa; --bg-card: #ffffff; --bg-viewer: #e8ecf1;
-  --text-primary: #1a1a2e; --text-secondary: #5a6577;
-  --accent: #4a90d9; --accent-light: #e8f0fe; --accent-glow: rgba(74,144,217,0.12);
-  --border: #d5dce6;
+/* ====== 5 Rhein Lab Themes ====== */
+[data-theme="rhine"] { /* \u83b1\u8335\u84dd - default */ }
+[data-theme="frost"] {
+  --bg-main: #eef3f8; --bg-card: #fafcfd; --text-primary: #1a2a3a;
+  --text-secondary: #5a6a7a; --accent: #4a90c4; --accent-light: #e1eff7;
+  --accent-dark: #2d6894; --border: #c8d6e5; --border-light: #e0e8f0;
 }
-[data-theme="blossom"] {
-  --bg-main: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
-  --bg-card: rgba(255,255,255,0.85); --bg-viewer: rgba(255,255,255,0.75);
-  --text-primary: #5d3a4a; --text-secondary: #8d6a7a;
-  --accent: #e91e63; --accent-light: #fce4ec; --accent-glow: rgba(233,30,99,0.12);
-  --border: rgba(233,30,99,0.15);
+[data-theme="graphite"] {
+  --bg-main: #e8eaed; --bg-card: #f5f5f7; --text-primary: #1a1c20;
+  --text-secondary: #5a5d64; --accent: #546e7a; --accent-light: #e4e8eb;
+  --accent-dark: #37474f; --border: #c8ccd0; --border-light: #e0e2e5;
 }
-[data-theme="mint"] {
-  --bg-main: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
-  --bg-card: rgba(255,255,255,0.85); --bg-viewer: rgba(255,255,255,0.75);
-  --text-primary: #1b3c37; --text-secondary: #4a7a72;
-  --accent: #009688; --accent-light: #e0f2f1; --accent-glow: rgba(0,150,136,0.12);
-  --border: rgba(0,150,136,0.15);
+[data-theme="ivory"] {
+  --bg-main: #f7f3ed; --bg-card: #fdfaf6; --text-primary: #3a3028;
+  --text-secondary: #7a7068; --accent: #a08060; --accent-light: #f0e8dc;
+  --accent-dark: #705840; --border: #d8cec0; --border-light: #e8e0d4;
 }
-[data-theme="lavender"] {
-  --bg-main: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-  --bg-card: rgba(255,255,255,0.85); --bg-viewer: rgba(255,255,255,0.75);
-  --text-primary: #4a3d5c; --text-secondary: #7a6d8c;
-  --accent: #9c27b0; --accent-light: #f3e5f5; --accent-glow: rgba(156,39,176,0.12);
-  --border: rgba(156,39,176,0.15);
-}
-[data-theme="peach"] {
-  --bg-main: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  --bg-card: rgba(255,255,255,0.85); --bg-viewer: rgba(255,255,255,0.75);
-  --text-primary: #5d4037; --text-secondary: #8d6e63;
-  --accent: #ff6f00; --accent-light: #fff3e0; --accent-glow: rgba(255,111,0,0.12);
-  --border: rgba(255,111,0,0.15);
-}
-[data-theme="sky"] {
-  --bg-main: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  --bg-card: rgba(255,255,255,0.85); --bg-viewer: rgba(255,255,255,0.75);
-  --text-primary: #1a2d3d; --text-secondary: #4a6d8d;
-  --accent: #1976d2; --accent-light: #e3f2fd; --accent-glow: rgba(25,118,210,0.12);
-  --border: rgba(25,118,210,0.15);
+[data-theme="emerald"] {
+  --bg-main: #eef4f1; --bg-card: #f7faf8; --text-primary: #1a2a24;
+  --text-secondary: #4a6a5c; --accent: #2e7d6a; --accent-light: #dceee7;
+  --accent-dark: #1b5e48; --border: #c0d4cc; --border-light: #dce8e2;
 }
 
-/* ====== Dark Mode Overlay ====== */
+/* Dark mode */
 [data-mode="dark"] {
-  --bg-main: #0f172a; --bg-card: #1e293b; --bg-viewer: #0f172a;
-  --bg-sidebar: #0b1120;
+  --bg-main: #111827; --bg-card: #1c2538; --bg-sidebar: #0a0f1a;
   --text-primary: #e2e8f0; --text-secondary: #94a3b8;
   --text-sidebar: #94a3b8; --text-sidebar-active: #e2e8f0;
-  --border: #334155;
-  --shadow: 0 2px 12px rgba(0,0,0,0.3); --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  --border: #2d3a50; --border-light: #1e293b;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4); --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
 }
-[data-mode="dark"][data-theme="blossom"] { --bg-main: #1a1018; --bg-card: #2a1a28; --bg-viewer: #1a1018; }
-[data-mode="dark"][data-theme="mint"] { --bg-main: #101a18; --bg-card: #1a2a28; --bg-viewer: #101a18; }
-[data-mode="dark"][data-theme="lavender"] { --bg-main: #18101a; --bg-card: #281a2a; --bg-viewer: #18101a; }
-[data-mode="dark"][data-theme="peach"] { --bg-main: #1a1410; --bg-card: #2a241a; --bg-viewer: #1a1410; }
-[data-mode="dark"][data-theme="sky"] { --bg-main: #10141a; --bg-card: #1a242a; --bg-viewer: #10141a; }
+[data-mode="dark"][data-theme="frost"] { --bg-main: #101824; --bg-card: #182030; }
+[data-mode="dark"][data-theme="graphite"] { --bg-main: #141416; --bg-card: #1c1c1e; }
+[data-mode="dark"][data-theme="ivory"] { --bg-main: #181410; --bg-card: #241c18; }
+[data-mode="dark"][data-theme="emerald"] { --bg-main: #0c1614; --bg-card: #162420; }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: var(--bg-main);
-  color: var(--text-primary);
-  font-size: var(--font-size-base);
-  overflow: hidden;
-  height: 100vh;
-  display: flex;
-  transition: background 0.5s ease, color 0.3s ease;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg-main); color:var(--text-primary);
+  font-size:var(--font-size-base); overflow:hidden; height:100vh; display:flex;
+  transition:background 0.5s,color 0.3s;
 }
 
-/* ====== Sidebar Auto-Hide System ====== */
+/* ====== Sidebar Auto-Hide ====== */
 .sidebar-trigger {
-  position: fixed;
-  left: 0; top: 0; bottom: 0;
-  width: 16px;
-  z-index: 150;
-  cursor: default;
-  background: linear-gradient(90deg, rgba(74,144,217,0.08) 0%, rgba(74,144,217,0.02) 50%, transparent 100%);
-  backdrop-filter: blur(2px);
-  transition: background 0.3s, width 0.2s;
+  position:fixed; left:0; top:0; bottom:0; width:16px; z-index:150; cursor:default;
+  background: linear-gradient(90deg,rgba(59,125,216,0.07) 0%,rgba(59,125,216,0.02) 50%,transparent 100%);
+  backdrop-filter:blur(2px); transition:background 0.3s,width 0.2s;
 }
-.sidebar-trigger:hover {
-  background: linear-gradient(90deg, rgba(74,144,217,0.15) 0%, rgba(74,144,217,0.06) 60%, transparent 100%);
-  width: 20px;
-}
+.sidebar-trigger:hover { background:linear-gradient(90deg,rgba(59,125,216,0.14) 0%,rgba(59,125,216,0.05) 60%,transparent 100%); width:20px; }
 
 .sidebar {
-  position: fixed;
-  left: 0; top: 0; bottom: 0;
-  width: 260px;
-  background: var(--bg-sidebar);
-  color: var(--text-sidebar);
-  display: flex;
-  flex-direction: column;
-  z-index: 140;
-  transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+  position:fixed; left:0; top:0; bottom:0; width:260px;
+  background:var(--bg-sidebar); color:var(--text-sidebar);
+  display:flex; flex-direction:column; z-index:140;
+  transform:translateX(-100%);
+  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  overflow:hidden; box-shadow:4px 0 24px rgba(0,0,0,0.3);
 }
-.sidebar.open {
-  transform: translateX(0);
-}
+.sidebar.open { transform:translateX(0); }
 
-.sidebar::after {
-  content: "";
-  position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  background: repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(74,144,217,0.02) 40px, rgba(74,144,217,0.02) 42px);
-  pointer-events: none;
+.sidebar-logo { padding:24px 20px; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; align-items:center; gap:12px; }
+.sidebar-logo .logo-hex {
+  width:36px; height:36px; border:2px solid var(--accent); border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; color:var(--accent); transform:rotate(45deg);
 }
+.sidebar-logo .logo-hex span { transform:rotate(-45deg); }
+.sidebar-logo .logo-text { font-size:16px; font-weight:600; color:var(--text-sidebar-active); letter-spacing:1px; }
+.sidebar-logo .logo-sub { font-size:9px; color:var(--text-sidebar); letter-spacing:2px; text-transform:uppercase; opacity:0.5; }
 
-.sidebar-logo {
-  padding: 24px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  display: flex; align-items: center; gap: 12px;
-  position: relative; z-index: 1;
-}
-.sidebar-logo .logo-icon {
-  width: 38px; height: 38px;
-  border: 2px solid var(--accent);
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; color: var(--accent);
-  transform: rotate(45deg); position: relative;
-}
-.sidebar-logo .logo-icon span { transform: rotate(-45deg); }
-.sidebar-logo .logo-text {
-  font-size: 16px; font-weight: 600;
-  color: var(--text-sidebar-active); letter-spacing: 1px;
-}
-.sidebar-logo .logo-sub {
-  font-size: 10px; color: var(--text-sidebar);
-  letter-spacing: 2px; text-transform: uppercase; opacity: 0.6;
-}
+.sidebar-section { padding:14px 20px 6px; font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--text-sidebar); opacity:0.4; }
+.sidebar-list { list-style:none; flex:1; overflow-y:auto; padding:0 10px; }
+.sidebar-list::-webkit-scrollbar { width:3px; }
+.sidebar-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
 
-.sidebar-section {
-  padding: 16px 20px 8px;
-  font-size: 10px; text-transform: uppercase;
-  letter-spacing: 2px; color: var(--text-sidebar);
-  opacity: 0.5; position: relative; z-index: 1;
-}
-.sidebar-list {
-  list-style: none; flex: 1; overflow-y: auto;
-  padding: 0 10px; position: relative; z-index: 1;
-}
-.sidebar-list::-webkit-scrollbar { width: 3px; }
-.sidebar-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.sidebar-item { padding:8px 12px; margin:1px 0; border-radius:6px; cursor:pointer; transition:all var(--transition); font-size:var(--font-size-sm); display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sidebar-item:hover { background:rgba(255,255,255,0.07); }
+.sidebar-item.active { background:rgba(59,125,216,0.25); color:var(--text-sidebar-active); }
+.sidebar-item .item-icon { font-size:13px; width:18px; text-align:center; flex-shrink:0; }
+.sidebar-item .item-badge { margin-left:auto; background:var(--accent); color:#fff; font-size:8px; padding:1px 5px; border-radius:8px; flex-shrink:0; }
 
-.sidebar-item {
-  padding: 10px 12px; margin: 2px 0; border-radius: 6px;
-  cursor: pointer; transition: all var(--transition);
-  font-size: var(--font-size-sm);
-  display: flex; align-items: center; gap: 10px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  position: relative;
-}
-.sidebar-item:hover { background: rgba(255,255,255,0.08); }
-.sidebar-item.active { background: rgba(74,144,217,0.3); color: var(--text-sidebar-active); }
-.sidebar-item .item-icon { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
-.sidebar-item .item-badge {
-  margin-left: auto; background: var(--accent);
-  color: #fff; font-size: 9px; padding: 1px 6px;
-  border-radius: 10px; flex-shrink: 0;
-}
+.sidebar-item.trash-item { margin-top:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:14px; opacity:0.65; }
+.sidebar-item.trash-item:hover { opacity:1; background:rgba(229,57,53,0.2); }
+.sidebar-item.trash-item .trash-count { margin-left:auto; background:var(--delete-red); color:#fff; font-size:8px; padding:1px 5px; border-radius:8px; flex-shrink:0; }
 
-/* Trash item in sidebar */
-.sidebar-item.trash-item {
-  margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);
-  padding-top: 14px; font-style: italic;
-  opacity: 0.7;
-}
-.sidebar-item.trash-item:hover { opacity: 1; background: rgba(239,68,68,0.2); }
-.sidebar-item.trash-item .trash-count {
-  margin-left: auto; background: #ef4444;
-  color: #fff; font-size: 9px; padding: 1px 6px;
-  border-radius: 10px; flex-shrink: 0;
-}
+/* ====== Main ====== */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
 
-/* ====== Main Content ====== */
-.main {
-  flex: 1; display: flex; flex-direction: column;
-  overflow: hidden; position: relative;
-  margin-left: 0;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+.topbar { height:52px; min-height:52px; background:var(--bg-card); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; gap:12px; transition:background 0.3s,border 0.3s; z-index:10; }
+.topbar-title { font-size:var(--font-size-lg); font-weight:600; }
+.topbar-spacer { flex:1; }
+.topbar-btn { width:34px; height:34px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-card); color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all var(--transition); }
+.topbar-btn:hover { background:var(--accent-light); color:var(--accent); border-color:var(--accent); }
 
-.topbar {
-  height: 56px; min-height: 56px;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center;
-  padding: 0 24px; gap: 16px;
-  transition: background 0.3s, border 0.3s;
-  z-index: 10;
-}
-.topbar-title { font-size: var(--font-size-lg); font-weight: 600; }
-.topbar-spacer { flex: 1; }
-.topbar-btn {
-  width: 36px; height: 36px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-card); color: var(--text-secondary);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 16px; transition: all var(--transition);
-}
-.topbar-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.content-area { flex:1; overflow-y:auto; overflow-x:hidden; padding:20px; transition:background 0.5s; }
+.content-area::-webkit-scrollbar { width:4px; }
+.content-area::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
 
-.content-area {
-  flex: 1; overflow: auto; padding: 24px;
-  position: relative;
-  transition: background 0.5s ease;
-  min-height: 0;
-}
-.content-area::-webkit-scrollbar { width: 5px; }
-.content-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
-
-/* ====== Action Cards ====== */
-.action-cards {
-  display: flex; gap: 16px; margin-bottom: 28px;
-  flex-wrap: wrap; z-index: 1; position: relative;
-}
-.action-card {
-  background: var(--bg-card);
-  border: 2px dashed var(--border);
-  border-radius: var(--radius-lg);
-  padding: 18px 28px; cursor: pointer;
-  transition: all var(--transition);
-  display: flex; align-items: center; gap: 12px;
-  font-weight: 500; color: var(--text-secondary);
-  font-size: var(--font-size-base);
-  backdrop-filter: blur(4px);
-}
-.action-card:hover {
-  border-color: var(--accent); color: var(--accent);
-  background: var(--accent-light);
-  box-shadow: 0 0 0 4px var(--accent-glow);
-}
-.action-card .action-icon {
-  font-size: 22px; width: 40px; height: 40px;
-  border-radius: var(--radius);
-  background: var(--bg-viewer);
-  display: flex; align-items: center; justify-content: center;
-  transition: background var(--transition);
-}
-.action-card:hover .action-icon { background: var(--accent); color: #fff; }
+/* ====== Action Card ====== */
+.action-cards { display:flex; gap:14px; margin-bottom:24px; flex-wrap:wrap; }
+.action-card { background:var(--bg-card); border:2px dashed var(--border); border-radius:var(--radius-lg); padding:16px 24px; cursor:pointer; transition:all var(--transition); display:flex; align-items:center; gap:12px; font-weight:500; color:var(--text-secondary); font-size:var(--font-size-base); }
+.action-card:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); box-shadow:0 0 0 4px var(--accent-glow); }
+.action-card .action-icon { font-size:20px; width:38px; height:38px; border-radius:var(--radius); background:var(--bg-main); display:flex; align-items:center; justify-content:center; transition:background var(--transition); }
+.action-card:hover .action-icon { background:var(--accent); color:#fff; }
 
 /* ====== Cabinet / Drag Grid ====== */
-.cabinet-area {
-  position: relative;
-  min-height: 500px;
-  height: calc(100vh - 200px);
-  z-index: 1;
-}
+.cabinet-area { position:relative; min-height:460px; height:calc(100vh - 210px); }
 
 .cabinet-card {
-  position: absolute;
-  width: 180px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  cursor: grab;
-  transition: box-shadow 0.2s, border-color 0.2s, opacity 0.3s;
-  overflow: hidden;
-  display: flex; flex-direction: column;
-  box-shadow: var(--shadow);
-  user-select: none;
-  backdrop-filter: blur(4px);
-  z-index: 1;
+  position:absolute; width:175px;
+  background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:14px; cursor:grab; user-select:none;
+  transition:box-shadow 0.2s,border-color 0.2s;
+  overflow:visible; display:flex; flex-direction:column; box-shadow:var(--shadow);
+  z-index:1;
 }
-.cabinet-card:hover { box-shadow: var(--shadow-lg); border-color: var(--accent); z-index: 5; }
-.cabinet-card.dragging {
-  cursor: grabbing;
-  z-index: 100 !important;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.2) !important;
-  opacity: 0.92;
-  transform: scale(1.05);
-  border-color: var(--accent);
-  transition: none;
-}
-.cabinet-card.long-pressing {
-  box-shadow: 0 0 0 3px var(--accent-glow);
-  border-color: var(--accent);
-}
+.cabinet-card:hover { box-shadow:var(--shadow-lg); border-color:var(--accent); z-index:5; }
+.cabinet-card.dragging { cursor:grabbing; z-index:100 !important; box-shadow:0 16px 48px rgba(0,0,0,0.2) !important; opacity:0.94; transform:scale(1.05); border-color:var(--accent); transition:none; }
+.cabinet-card.long-pressing { box-shadow:0 0 0 3px var(--accent-glow); border-color:var(--accent); }
 
-.cabinet-card .card-accent {
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--accent));
-  opacity: 0; transition: opacity var(--transition);
+/* Hover delete button */
+.cabinet-card .delete-btn {
+  position:absolute; top:-8px; right:-8px;
+  width:22px; height:22px; border-radius:50%;
+  background:var(--delete-red); color:#fff; border:none;
+  font-size:12px; cursor:pointer; display:none;
+  align-items:center; justify-content:center;
+  z-index:10; line-height:1; box-shadow:0 2px 6px rgba(229,57,53,0.4);
+  transition:transform 0.15s;
 }
-.cabinet-card:hover .card-accent { opacity: 1; }
+.cabinet-card:hover .delete-btn { display:flex; }
+.cabinet-card .delete-btn:hover { transform:scale(1.2); }
+.cabinet-card.dragging .delete-btn, .cabinet-card.long-pressing .delete-btn { display:none !important; }
 
-.cabinet-card .card-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.8; }
-.cabinet-card .card-name {
-  font-size: 13px; font-weight: 600;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  margin-bottom: 4px;
-}
-.cabinet-card .card-meta {
-  font-size: 10px; color: var(--text-secondary);
-  display: flex; align-items: center; gap: 6px;
-}
-.cabinet-card .card-type {
-  display: inline-block; padding: 2px 8px;
-  background: var(--accent-light); color: var(--accent);
-  border-radius: 4px; font-size: 9px; font-weight: 500;
-  letter-spacing: 0.5px; margin-top: auto; width: fit-content;
-}
-
-/* ====== Crack Animation ====== */
-.cabinet-card.cracking {
-  animation: crackAndBreak 2.5s ease-in forwards;
-  pointer-events: none;
-}
-@keyframes crackAndBreak {
-  0% { transform: scale(1); opacity: 1; filter: none; }
-  10% { transform: scale(1.02); }
-  20% { transform: rotate(1deg) scale(1.01); box-shadow: inset 0 0 0 0 rgba(239,68,68,0); }
-  30% { box-shadow: inset 0 0 20px 5px rgba(239,68,68,0.3); }
-  40% { transform: rotate(-1deg) scale(0.98); opacity: 0.9; }
-  50% { transform: rotate(2deg) scale(0.95); box-shadow: inset 0 0 40px 10px rgba(239,68,68,0.5); }
-  60% { transform: rotate(-2deg) scale(0.9); opacity: 0.8; border-color: #ef4444; }
-  70% { transform: rotate(3deg) scale(0.85); box-shadow: inset 0 0 60px 15px rgba(239,68,68,0.7); }
-  80% { transform: rotate(-3deg) scale(0.75); opacity: 0.5; }
-  90% { transform: rotate(5deg) scale(0.5); opacity: 0.2; filter: blur(2px); }
-  100% { transform: rotate(10deg) scale(0.1); opacity: 0; filter: blur(8px); }
-}
+.cabinet-card .card-accent { position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--accent-dark)); opacity:0; transition:opacity var(--transition); }
+.cabinet-card:hover .card-accent { opacity:1; }
+.cabinet-card .card-icon { font-size:26px; margin-bottom:6px; opacity:0.8; }
+.cabinet-card .card-name { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
+.cabinet-card .card-meta { font-size:10px; color:var(--text-secondary); display:flex; align-items:center; gap:5px; }
+.cabinet-card .card-type { display:inline-block; padding:1px 7px; background:var(--accent-light); color:var(--accent); border-radius:3px; font-size:9px; font-weight:500; margin-top:auto; width:fit-content; }
 
 /* ====== Viewer ====== */
-.viewer-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6);
-  z-index: 200; display: flex;
-  align-items: center; justify-content: center;
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.2s ease;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.viewer-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:200; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); animation:fadeIn 0.2s ease; overflow:hidden; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
-.viewer-container {
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  width: 90vw; max-width: 1100px;
-  height: 88vh;
-  display: flex; flex-direction: column;
-  box-shadow: var(--shadow-lg);
-  animation: slideUp 0.25s ease;
-  overflow: hidden;
+.viewer-container { background:var(--bg-card); border-radius:var(--radius-lg); width:92vw; max-width:1150px; height:90vh; display:flex; flex-direction:column; box-shadow:var(--shadow-lg); animation:slideUp 0.25s ease; overflow:hidden; position:relative; }
+.viewer-header { display:flex; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border); gap:8px; flex-shrink:0; }
+.viewer-header h3 { flex:1; font-size:var(--font-size-base); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.viewer-body { flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--bg-main); padding:16px; position:relative; transition:background 0.3s; }
+
+/* Page container with pen canvas overlay */
+.page-wrapper { position:relative; display:inline-block; box-shadow:var(--shadow-lg); border-radius:2px; }
+.page-wrapper .page-canvas { display:block; border-radius:2px; }
+.page-wrapper .pen-canvas { position:absolute; top:0; left:0; cursor:crosshair; border-radius:2px; }
+
+.viewer-footer { display:flex; align-items:center; justify-content:center; padding:8px 16px; border-top:1px solid var(--border); gap:10px; flex-shrink:0; }
+.viewer-footer button { padding:5px 12px; border:1px solid var(--border); background:var(--bg-card); border-radius:var(--radius); cursor:pointer; font-size:var(--font-size-sm); color:var(--text-primary); transition:all var(--transition); display:flex; align-items:center; gap:3px; }
+.viewer-footer button:hover { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+.viewer-footer button:disabled { opacity:0.35; cursor:not-allowed; pointer-events:none; }
+.viewer-footer button.active-tool { background:var(--accent); color:#fff; border-color:var(--accent); }
+.viewer-footer .page-input { width:44px; text-align:center; border:1px solid var(--border); border-radius:var(--radius); padding:5px; font-size:var(--font-size-sm); background:var(--bg-card); color:var(--text-primary); }
+.viewer-footer .page-info { font-size:var(--font-size-sm); color:var(--text-secondary); min-width:70px; text-align:center; }
+
+/* Pen toolbar in viewer */
+.pen-toolbar { display:flex; gap:5px; align-items:center; }
+.pen-toolbar .pen-color { width:18px; height:18px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:all var(--transition); flex-shrink:0; }
+.pen-toolbar .pen-color.active { border-color:var(--text-primary); transform:scale(1.2); }
+.pen-toolbar .pen-size { width:60px; accent-color:var(--accent); }
+
+/* ====== Fullscreen ====== */
+body.fullscreen-active .viewer-overlay { background:#000; }
+body.fullscreen-active .viewer-container { width:100vw; max-width:100vw; height:100vh; border-radius:0; }
+body.fullscreen-active .viewer-header { background:rgba(0,0,0,0.7); border-bottom:1px solid rgba(255,255,255,0.1); color:#fff; position:absolute; top:0; left:0; right:0; z-index:20; }
+body.fullscreen-active .viewer-header button { color:#ccc; border-color:rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); }
+body.fullscreen-active .viewer-header button:hover { color:#fff; border-color:#fff; }
+body.fullscreen-active .viewer-body { background:#1a1a1a; padding:0; }
+body.fullscreen-active .viewer-footer { background:rgba(0,0,0,0.7); border-top:1px solid rgba(255,255,255,0.1); position:absolute; bottom:0; left:0; right:0; z-index:20; }
+body.fullscreen-active .viewer-footer button { color:#ccc; border-color:rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); }
+body.fullscreen-active .viewer-footer button:hover { color:#fff; border-color:#fff; }
+body.fullscreen-active .viewer-footer button.active-tool { background:var(--accent); color:#fff; border-color:var(--accent); }
+body.fullscreen-active .viewer-footer .page-input { color:#fff; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); }
+body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
+
+/* Fullscreen + button */
+.fullscreen-plus {
+  position:absolute; right:20px; top:50%; transform:translateY(-50%);
+  width:40px; height:40px; border-radius:50%;
+  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+  color:#fff; font-size:20px; cursor:pointer; z-index:25;
+  display:flex; align-items:center; justify-content:center;
+  transition:all var(--transition);
 }
-.viewer-header {
-  display: flex; align-items: center;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border); gap: 12px;
+.fullscreen-plus:hover { background:rgba(255,255,255,0.2); border-color:#fff; }
+
+.fullscreen-plus-menu {
+  position:absolute; right:48px; top:50%; transform:translateY(-50%);
+  background:rgba(30,30,40,0.95); border:1px solid rgba(255,255,255,0.15);
+  border-radius:var(--radius); padding:6px; z-index:26;
+  display:flex; flex-direction:column; gap:2px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  animation:fadeIn 0.15s ease;
 }
-.viewer-header h3 { flex: 1; font-size: var(--font-size-lg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.viewer-body {
-  flex: 1; overflow: auto;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg-viewer);
-  padding: 20px; position: relative;
-  transition: background 0.3s;
+.fullscreen-plus-menu button {
+  padding:8px 16px; border:none; background:none; color:#ddd;
+  cursor:pointer; font-size:13px; text-align:left; white-space:nowrap;
+  border-radius:4px; transition:background 0.15s;
 }
-.viewer-body .page-canvas { box-shadow: var(--shadow-lg); border-radius: 4px; max-width: 100%; max-height: 100%; }
-.viewer-footer {
-  display: flex; align-items: center; justify-content: center;
-  padding: 10px 20px; border-top: 1px solid var(--border); gap: 12px;
-}
-.viewer-footer button {
-  padding: 6px 14px; border: 1px solid var(--border);
-  background: var(--bg-card); border-radius: var(--radius);
-  cursor: pointer; font-size: var(--font-size-sm);
-  color: var(--text-primary); transition: all var(--transition);
-  display: flex; align-items: center; gap: 4px;
-}
-.viewer-footer button:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
-.viewer-footer button:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
-.viewer-footer .page-input {
-  width: 50px; text-align: center;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 6px; font-size: var(--font-size-sm);
-  background: var(--bg-card); color: var(--text-primary);
-}
-.viewer-footer .page-info { font-size: var(--font-size-sm); color: var(--text-secondary); min-width: 80px; text-align: center; }
+.fullscreen-plus-menu button:hover { background:rgba(255,255,255,0.1); color:#fff; }
+
+/* ====== Note Panel ====== */
+.note-panel { position:absolute; top:0; right:0; width:370px; height:100%; background:var(--bg-card); border-left:1px solid var(--border); z-index:10; display:flex; flex-direction:column; animation:slideIn 0.25s ease; box-shadow:-4px 0 20px rgba(0,0,0,0.1); }
+@keyframes slideIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
+.note-panel-header { padding:12px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+.note-panel-header h4 { flex:1; font-size:var(--font-size-base); }
+.note-mode-select { display:flex; gap:6px; padding:10px 14px; border-bottom:1px solid var(--border-light); }
+.note-mode-btn { flex:1; padding:7px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-card); cursor:pointer; font-size:var(--font-size-sm); transition:all var(--transition); text-align:center; color:var(--text-secondary); }
+.note-mode-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.note-mode-btn:hover:not(.active) { border-color:var(--accent); color:var(--accent); }
+.note-colors { display:flex; gap:5px; padding:8px 14px; border-bottom:1px solid var(--border-light); flex-wrap:wrap; align-items:center; }
+.note-color-dot { width:18px; height:18px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:all var(--transition); }
+.note-color-dot.active { border-color:var(--text-primary); transform:scale(1.2); }
+.note-canvas-wrap { flex:1; position:relative; overflow:hidden; background:#fff; margin:10px; border-radius:var(--radius); border:1px solid var(--border-light); }
+.note-canvas-wrap canvas { position:absolute; top:0; left:0; width:100%; height:100%; cursor:crosshair; }
+.note-tools { display:flex; gap:3px; padding:8px 14px; border-top:1px solid var(--border-light); flex-wrap:wrap; }
+.note-tool-btn { padding:4px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); cursor:pointer; font-size:10px; transition:all var(--transition); color:var(--text-secondary); }
+.note-tool-btn:hover { border-color:var(--accent); color:var(--accent); }
+.note-tool-btn.active { background:var(--accent-light); border-color:var(--accent); color:var(--accent); font-weight:600; }
+.note-file-import { padding:10px 14px; border-top:1px solid var(--border-light); display:flex; gap:6px; flex-wrap:wrap; }
+.note-file-import input[type="file"] { display:none; }
 
 /* ====== Trash View ====== */
-.trash-view {
-  padding: 24px; position: relative; z-index: 1;
-}
-.trash-view h2 {
-  font-size: var(--font-size-xl); margin-bottom: 6px;
-  display: flex; align-items: center; gap: 10px;
-}
-.trash-view .trash-subtitle { font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 20px; }
-.trash-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-}
-.trash-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  opacity: 0.7;
-  transition: all var(--transition);
-  display: flex; flex-direction: column;
-  gap: 8px;
-}
-.trash-card:hover { opacity: 1; box-shadow: var(--shadow-lg); }
-.trash-card .trash-card-name { font-weight: 600; font-size: 13px; }
-.trash-card .trash-card-meta { font-size: 10px; color: var(--text-secondary); }
-.trash-card .trash-actions { display: flex; gap: 8px; margin-top: 8px; }
-.trash-card .trash-actions button {
-  flex: 1; padding: 6px 10px; border-radius: var(--radius);
-  border: 1px solid var(--border); cursor: pointer;
-  font-size: 11px; transition: all var(--transition);
-  background: var(--bg-card); color: var(--text-primary);
-}
-.trash-card .trash-actions .btn-restore:hover { background: #10b981; color: #fff; border-color: #10b981; }
-.trash-card .trash-actions .btn-delete:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+.trash-view { padding:20px; }
+.trash-view h2 { font-size:var(--font-size-xl); margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+.trash-view .trash-subtitle { font-size:var(--font-size-sm); color:var(--text-secondary); margin-bottom:18px; }
+.trash-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; }
+.trash-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px; opacity:0.7; transition:all var(--transition); display:flex; flex-direction:column; gap:6px; }
+.trash-card:hover { opacity:1; box-shadow:var(--shadow-lg); }
+.trash-card .trash-card-name { font-weight:600; font-size:12px; }
+.trash-card .trash-card-meta { font-size:9px; color:var(--text-secondary); }
+.trash-card .trash-actions { display:flex; gap:6px; margin-top:6px; }
+.trash-card .trash-actions button { flex:1; padding:5px 8px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-size:10px; transition:all var(--transition); background:var(--bg-card); color:var(--text-primary); }
+.trash-card .trash-actions .btn-restore:hover { background:#10b981; color:#fff; border-color:#10b981; }
+.trash-card .trash-actions .btn-delete:hover { background:var(--delete-red); color:#fff; border-color:var(--delete-red); }
 
-/* ====== Note Panel (kept from original) ====== */
-.note-panel {
-  position: absolute; top: 0; right: 0;
-  width: 380px; height: 100%;
-  background: var(--bg-card);
-  border-left: 1px solid var(--border);
-  z-index: 10; display: flex; flex-direction: column;
-  animation: slideIn 0.25s ease;
-  box-shadow: -4px 0 20px rgba(0,0,0,0.1);
-}
-@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-.note-panel-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-.note-panel-header h4 { flex: 1; font-size: var(--font-size-base); }
-.note-mode-select { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-.note-mode-btn { flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); cursor: pointer; font-size: var(--font-size-sm); transition: all var(--transition); text-align: center; color: var(--text-secondary); }
-.note-mode-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.note-mode-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
-.note-colors { display: flex; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
-.note-color-dot { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all var(--transition); }
-.note-color-dot.active { border-color: var(--text-primary); transform: scale(1.2); box-shadow: 0 0 8px rgba(0,0,0,0.2); }
-.note-canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #fff; margin: 12px; border-radius: var(--radius); border: 1px solid var(--border); }
-.note-canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; }
-.note-tools { display: flex; gap: 4px; padding: 10px 16px; border-top: 1px solid var(--border); flex-wrap: wrap; }
-.note-tool-btn { padding: 5px 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); cursor: pointer; font-size: 11px; transition: all var(--transition); color: var(--text-secondary); }
-.note-tool-btn:hover { border-color: var(--accent); color: var(--accent); }
-.note-tool-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.note-file-import { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; }
-.note-file-import input[type="file"] { display: none; }
+/* ====== Settings ====== */
+.settings-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); animation:fadeIn 0.2s ease; }
+.settings-panel { background:var(--bg-card); border-radius:var(--radius-lg); width:400px; max-height:78vh; overflow-y:auto; box-shadow:var(--shadow-lg); animation:slideUp 0.25s ease; }
+.settings-panel-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; font-weight:600; font-size:var(--font-size-lg); }
+.settings-panel-body { padding:18px 20px; }
+.settings-group { margin-bottom:20px; }
+.settings-group label { display:block; font-size:var(--font-size-sm); font-weight:600; color:var(--text-secondary); margin-bottom:7px; letter-spacing:0.5px; text-transform:uppercase; }
+.settings-group input[type="range"] { width:100%; accent-color:var(--accent); }
 
-/* ====== Settings Modal ====== */
-.settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease; }
-.settings-panel { background: var(--bg-card); border-radius: var(--radius-lg); width: 420px; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-lg); animation: slideUp 0.25s ease; }
-.settings-panel-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: var(--font-size-lg); }
-.settings-panel-body { padding: 20px 24px; }
-.settings-group { margin-bottom: 22px; }
-.settings-group label { display: block; font-size: var(--font-size-sm); font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
-.settings-group input[type="range"] { width: 100%; accent-color: var(--accent); }
+.theme-options { display:flex; gap:9px; flex-wrap:wrap; }
+.theme-pick { width:44px; height:44px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:all var(--transition); position:relative; overflow:hidden; }
+.theme-pick.active { border-color:var(--text-primary); transform:scale(1.12); box-shadow:0 0 14px rgba(0,0,0,0.2); }
+.theme-pick:hover { transform:scale(1.06); }
 
-.theme-options { display: flex; gap: 10px; flex-wrap: wrap; }
-.theme-pick {
-  width: 48px; height: 48px; border-radius: 50%;
-  cursor: pointer; border: 3px solid transparent;
-  transition: all var(--transition); position: relative;
-  overflow: hidden;
-}
-.theme-pick.active { border-color: var(--text-primary); transform: scale(1.15); box-shadow: 0 0 16px rgba(0,0,0,0.25); }
-.theme-pick:hover { transform: scale(1.08); }
-
-.mode-toggle { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); transition: all var(--transition); }
-.mode-toggle:hover { border-color: var(--accent); }
-.mode-toggle .toggle-label { font-size: var(--font-size-base); font-weight: 500; }
-.mode-toggle .toggle-switch { margin-left: auto; width: 44px; height: 24px; background: var(--border); border-radius: 12px; position: relative; transition: background var(--transition); }
-.mode-toggle .toggle-switch::after { content: ""; position: absolute; width: 20px; height: 20px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform var(--transition); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-.mode-toggle.active .toggle-switch { background: var(--accent); }
-.mode-toggle.active .toggle-switch::after { transform: translateX(20px); }
+.mode-toggle { display:flex; align-items:center; gap:10px; cursor:pointer; padding:10px; border:1px solid var(--border); border-radius:var(--radius); transition:all var(--transition); }
+.mode-toggle:hover { border-color:var(--accent); }
+.mode-toggle .toggle-label { font-size:var(--font-size-base); font-weight:500; }
+.mode-toggle .toggle-switch { margin-left:auto; width:42px; height:22px; background:var(--border); border-radius:11px; position:relative; transition:background var(--transition); }
+.mode-toggle .toggle-switch::after { content:""; position:absolute; width:18px; height:18px; background:#fff; border-radius:50%; top:2px; left:2px; transition:transform var(--transition); box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+.mode-toggle.active .toggle-switch { background:var(--accent); }
+.mode-toggle.active .toggle-switch::after { transform:translateX(20px); }
 
 /* ====== Misc ====== */
-.close-btn { width: 32px; height: 32px; border: none; background: none; cursor: pointer; font-size: 20px; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; border-radius: var(--radius); transition: all var(--transition); }
-.close-btn:hover { background: rgba(0,0,0,0.05); color: var(--text-primary); }
-.empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); position: relative; z-index: 1; }
-.empty-state .empty-icon { font-size: 48px; opacity: 0.3; margin-bottom: 12px; }
-.empty-state p { font-size: var(--font-size-lg); margin-bottom: 4px; }
-.empty-state .empty-sub { font-size: var(--font-size-sm); opacity: 0.5; }
-.docx-content { background: #fff; padding: 40px; max-width: 800px; width: 100%; border-radius: 8px; box-shadow: var(--shadow-lg); color: #1a1a2e; overflow-y: auto; max-height: 100%; }
-.docx-content h1, .docx-content h2, .docx-content h3 { margin: 16px 0 8px; }
-.docx-content p { margin: 8px 0; line-height: 1.8; }
-.docx-content img { max-width: 100%; height: auto; }
-.toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-sidebar); color: #fff; padding: 12px 20px; border-radius: var(--radius); font-size: var(--font-size-sm); z-index: 400; animation: slideUp 0.3s ease; box-shadow: var(--shadow-lg); border-left: 3px solid var(--accent); }
-.confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 350; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.15s ease; }
-.confirm-dialog { background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; width: 340px; box-shadow: var(--shadow-lg); animation: slideUp 0.2s ease; }
-.confirm-dialog p { margin-bottom: 16px; font-size: var(--font-size-base); }
-.confirm-dialog .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
-.confirm-dialog button { padding: 8px 18px; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; font-size: var(--font-size-sm); transition: all var(--transition); }
-.confirm-dialog .btn-danger { background: #ef4444; color: #fff; border-color: #ef4444; }
-.confirm-dialog .btn-cancel { background: var(--bg-card); }
-.hidden { display: none !important; }
+.close-btn { width:30px; height:30px; border:none; background:none; cursor:pointer; font-size:18px; color:var(--text-secondary); display:flex; align-items:center; justify-content:center; border-radius:var(--radius); transition:all var(--transition); }
+.close-btn:hover { background:rgba(0,0,0,0.05); color:var(--text-primary); }
+.empty-state { text-align:center; padding:60px 20px; color:var(--text-secondary); }
+.empty-state .empty-icon { font-size:44px; opacity:0.25; margin-bottom:10px; }
+.empty-state p { font-size:var(--font-size-lg); margin-bottom:3px; }
+.empty-state .empty-sub { font-size:var(--font-size-sm); opacity:0.45; }
+.docx-content { background:#fff; padding:36px; max-width:780px; width:100%; border-radius:6px; box-shadow:var(--shadow-lg); color:#1a1a2e; overflow-y:auto; max-height:100%; }
+.docx-content h1,.docx-content h2,.docx-content h3 { margin:14px 0 6px; }
+.docx-content p { margin:6px 0; line-height:1.7; }
+.docx-content img { max-width:100%; height:auto; }
+.toast { position:fixed; bottom:20px; right:20px; background:var(--bg-sidebar); color:#fff; padding:10px 18px; border-radius:var(--radius); font-size:var(--font-size-sm); z-index:400; animation:slideUp 0.3s ease; box-shadow:var(--shadow-lg); border-left:3px solid var(--accent); max-width:320px; }
+.confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:350; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.15s ease; }
+.confirm-dialog { background:var(--bg-card); border-radius:var(--radius-lg); padding:22px; width:320px; box-shadow:var(--shadow-lg); animation:slideUp 0.2s ease; }
+.confirm-dialog p { margin-bottom:14px; font-size:var(--font-size-base); }
+.confirm-dialog .confirm-actions { display:flex; gap:8px; justify-content:flex-end; }
+.confirm-dialog button { padding:7px 16px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-size:var(--font-size-sm); transition:all var(--transition); }
+.confirm-dialog .btn-danger { background:var(--delete-red); color:#fff; border-color:var(--delete-red); }
+.confirm-dialog .btn-cancel { background:var(--bg-card); color:var(--text-primary); }
+
+.hidden { display:none !important; }
 </style>
 </head>
 
-<body data-theme="default" data-mode="light">
+<body data-theme="rhine" data-mode="light">
 
-<!-- Sidebar trigger zone -->
 <div class="sidebar-trigger" id="sidebarTrigger"></div>
 
-<!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-icon"><span>\u25c6</span></div>
-    <div>
-      <div class="logo-text">Rhein Lab</div>
-      <div class="logo-sub">Document System</div>
-    </div>
+    <div class="logo-hex"><span>\u25c6</span></div>
+    <div><div class="logo-text">Rhein Lab</div><div class="logo-sub">Document System</div></div>
   </div>
   <div class="sidebar-section">\u8d44\u6599\u5e93</div>
-  <ul class="sidebar-list" id="sidebarList">
-    <li style="padding:20px;text-align:center;opacity:0.4;font-size:12px">\u6682\u65e0\u8d44\u6599</li>
-  </ul>
+  <ul class="sidebar-list" id="sidebarList"><li style="padding:16px;text-align:center;opacity:0.35;font-size:11px">\u6682\u65e0\u8d44\u6599</li></ul>
   <div class="sidebar-section">\u5176\u4ed6</div>
   <ul class="sidebar-list" id="sidebarBottom">
     <li class="sidebar-item trash-item" id="trashSidebarItem" onclick="openTrash()" style="display:none">
-      <span class="item-icon">\u267b</span>
-      <span>\u56de\u6536\u7ad9</span>
+      <span class="item-icon">\u267b</span><span>\u56de\u6536\u7ad9</span>
       <span class="trash-count" id="trashCount">0</span>
     </li>
   </ul>
 </aside>
 
-<!-- Main -->
-<main class="main" id="mainContent">
+<main class="main">
   <header class="topbar">
     <span class="topbar-title">\u8d44\u6599\u67dc \u00b7 Cabinet</span>
     <span class="topbar-spacer"></span>
@@ -576,28 +347,20 @@ body {
   <div class="content-area" id="contentArea">
     <div id="mainView">
       <div class="action-cards">
-        <div class="action-card" onclick="createEmptyMaterial()">
-          <div class="action-icon">+</div>
-          <div>
-            <div style="font-weight:600">\u521b\u5efa\u7a7a\u8d44\u6599</div>
-            <div style="font-size:11px;opacity:0.6">Create Empty Material</div>
-          </div>
-        </div>
         <div class="action-card" onclick="document.getElementById('importFileInput').click()">
           <div class="action-icon">\u21e7</div>
           <div>
             <div style="font-weight:600">\u5bfc\u5165\u8d44\u6599</div>
-            <div style="font-size:11px;opacity:0.6">Import PDF / DOCX / PNG</div>
+            <div style="font-size:11px;opacity:0.6">PDF / DOCX / PNG</div>
           </div>
         </div>
         <input type="file" id="importFileInput" accept=".pdf,.docx,.png,.jpg,.jpeg" style="display:none" onchange="handleFileImport(event)">
       </div>
-
       <div class="cabinet-area" id="cabinetArea">
         <div class="empty-state" id="emptyState">
-          <div class="empty-icon">[ ]</div>
+          <div class="empty-icon">\u25a1</div>
           <p>\u6682\u65e0\u8d44\u6599</p>
-          <div class="empty-sub">\u70b9\u51fb\u4e0a\u65b9\u6309\u94ae\u521b\u5efa\u6216\u5bfc\u5165\u8d44\u6599</div>
+          <div class="empty-sub">\u70b9\u51fb\u4e0a\u65b9\u6309\u94ae\u5bfc\u5165\u8d44\u6599</div>
         </div>
       </div>
     </div>
@@ -605,11 +368,8 @@ body {
     <div id="trashView" class="hidden">
       <div class="trash-view">
         <h2>\u267b \u56de\u6536\u7ad9</h2>
-        <div class="trash-subtitle">\u5df2\u5220\u9664\u7684\u8d44\u6599\uff0c\u53ef\u6062\u590d\u6216\u5f7b\u5e95\u5220\u9664</div>
-        <button class="action-card" onclick="closeTrash()" style="margin-bottom:20px">
-          <div class="action-icon">\u2190</div>
-          <div style="font-weight:600">\u8fd4\u56de\u8d44\u6599\u67dc</div>
-        </button>
+        <div class="trash-subtitle">\u5df2\u5220\u9664\u7684\u8d44\u6599</div>
+        <button class="action-card" onclick="closeTrash()" style="margin-bottom:18px"><div class="action-icon">\u2190</div><div style="font-weight:600">\u8fd4\u56de\u8d44\u6599\u67dc</div></button>
         <div class="trash-grid" id="trashGrid"></div>
       </div>
     </div>
@@ -618,25 +378,45 @@ body {
 
 <!-- Viewer -->
 <div class="viewer-overlay hidden" id="viewerOverlay">
-  <div class="viewer-container">
+  <div class="viewer-container" id="viewerContainer">
     <div class="viewer-header">
       <h3 id="viewerTitle">\u8d44\u6599\u6d4f\u89c8</h3>
-      <button class="topbar-btn" onclick="deleteMaterial()" title="\u5220\u9664\u8d44\u6599">\u2716</button>
+      <button class="topbar-btn" onclick="toggleFullscreen()" title="\u5168\u5c4f" id="fullscreenBtn">\u26f6</button>
+      <button class="topbar-btn" onclick="deleteMaterial()" title="\u5220\u9664">\u2716</button>
       <button class="topbar-btn" onclick="toggleNotePanel()" title="\u7b14\u8bb0" id="noteToggleBtn">\u270e</button>
       <button class="close-btn" onclick="closeViewer()">\u2715</button>
     </div>
-    <div class="viewer-body" id="viewerBody" style="position:relative">
-      <div id="viewerContent" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;"></div>
+    <div class="viewer-body" id="viewerBody">
+      <div id="viewerContent" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:relative;"></div>
       <div class="note-panel hidden" id="notePanel"></div>
+      <!-- Fullscreen + button -->
+      <div class="fullscreen-plus hidden" id="fullscreenPlus" onclick="togglePlusMenu()">+</div>
+      <div class="fullscreen-plus-menu hidden" id="plusMenu">
+        <button onclick="addBlankPage()">\u25a1 \u6dfb\u52a0\u7a7a\u767d\u9875</button>
+        <button onclick="addNoteFromFS()">\u270e \u6dfb\u52a0\u7b14\u8bb0</button>
+      </div>
     </div>
     <div class="viewer-footer" id="viewerFooter">
-      <button onclick="viewerPrevPage()" id="btnPrev" disabled>\u25c0 \u4e0a\u4e00\u9875</button>
-      <button onclick="viewerJumpPage()">\u8df3\u8f6c</button>
+      <button onclick="viewerPrevPage()" id="btnPrev" disabled>\u25c0</button>
+      <span class="page-info" id="pageInfo">1 / 1</span>
+      <button onclick="viewerNextPage()" id="btnNext" disabled>\u25b6</button>
+      <button onclick="viewerJumpPage()">\u2192\u8df3\u8f6c</button>
       <input type="number" class="page-input" id="pageInput" value="1" min="1" onkeydown="if(event.key==='Enter')viewerGoToPage()">
-      <span class="page-info" id="pageInfo">/ 1</span>
-      <button onclick="viewerRotate(-90)">\u21ba \u5de6\u65cb</button>
-      <button onclick="viewerRotate(90)">\u21bb \u53f3\u65cb</button>
-      <button onclick="viewerNextPage()" id="btnNext" disabled>\u4e0b\u4e00\u9875 \u25b6</button>
+      <button onclick="viewerRotate(-90)">\u21ba</button>
+      <button onclick="viewerRotate(90)">\u21bb</button>
+      <span style="color:var(--text-secondary);margin:0 6px">|</span>
+      <button id="penToolBtn" onclick="togglePenTool()">\u270e \u7b14</button>
+      <div class="pen-toolbar" id="penToolbar" style="display:none">
+        <div class="pen-color active" style="background:#1a1a2e" data-color="#1a1a2e" onclick="setPenColor('#1a1a2e',this)"></div>
+        <div class="pen-color" style="background:#e53935" data-color="#e53935" onclick="setPenColor('#e53935',this)"></div>
+        <div class="pen-color" style="background:#1e88e5" data-color="#1e88e5" onclick="setPenColor('#1e88e5',this)"></div>
+        <div class="pen-color" style="background:#43a047" data-color="#43a047" onclick="setPenColor('#43a047',this)"></div>
+        <div class="pen-color" style="background:#fb8c00" data-color="#fb8c00" onclick="setPenColor('#fb8c00',this)"></div>
+        <div class="pen-color" style="background:#8e24aa" data-color="#8e24aa" onclick="setPenColor('#8e24aa',this)"></div>
+        <input type="range" class="pen-size" min="1" max="12" value="3" oninput="penWidth=parseInt(this.value)">
+        <button class="topbar-btn" onclick="undoPenStroke()" title="\u64a4\u56de">\u21a9</button>
+        <button class="topbar-btn" id="eraserToolBtn" onclick="toggleEraser()" title="\u6a61\u76ae">\u232b</button>
+      </div>
     </div>
   </div>
 </div>
@@ -644,47 +424,38 @@ body {
 <!-- Settings -->
 <div class="settings-overlay hidden" id="settingsOverlay">
   <div class="settings-panel">
-    <div class="settings-panel-header">
-      <span>\u2699 \u8bbe\u7f6e</span>
-      <button class="close-btn" onclick="toggleSettings()">\u2715</button>
-    </div>
+    <div class="settings-panel-header"><span>\u2699 \u8bbe\u7f6e</span><button class="close-btn" onclick="toggleSettings()">\u2715</button></div>
     <div class="settings-panel-body">
       <div class="settings-group">
         <label>\u5b57\u4f53\u5927\u5c0f</label>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:12px">A</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px">A</span>
           <input type="range" min="12" max="20" value="14" id="fontSizeSlider" oninput="updateFontSize(this.value)" style="flex:1">
           <span style="font-size:18px">A</span>
-          <span id="fontSizeLabel" style="min-width:40px;text-align:center">14px</span>
+          <span id="fontSizeLabel" style="min-width:36px;text-align:center">14px</span>
         </div>
       </div>
-
       <div class="settings-group">
-        <label>\u5168\u5c40\u914d\u8272</label>
-        <div class="theme-options" id="themeOptions">
-          <div class="theme-pick active" style="background:linear-gradient(135deg,#f5f7fa,#e8ecf1)" data-theme="default" onclick="setTheme('default')" title="\u9ed8\u8ba4\u767d"></div>
-          <div class="theme-pick" style="background:linear-gradient(135deg,#fce4ec,#f8bbd0)" data-theme="blossom" onclick="setTheme('blossom')" title="\u7c89\u6a31"></div>
-          <div class="theme-pick" style="background:linear-gradient(135deg,#e0f2f1,#b2dfdb)" data-theme="mint" onclick="setTheme('mint')" title="\u8584\u8377"></div>
-          <div class="theme-pick" style="background:linear-gradient(135deg,#f3e5f5,#e1bee7)" data-theme="lavender" onclick="setTheme('lavender')" title="\u85b0\u8863\u8349"></div>
-          <div class="theme-pick" style="background:linear-gradient(135deg,#fff3e0,#ffe0b2)" data-theme="peach" onclick="setTheme('peach')" title="\u871c\u6843"></div>
-          <div class="theme-pick" style="background:linear-gradient(135deg,#e3f2fd,#bbdefb)" data-theme="sky" onclick="setTheme('sky')" title="\u5929\u7a7a"></div>
+        <label>\u83b1\u8335\u751f\u547d\u914d\u8272</label>
+        <div class="theme-options">
+          <div class="theme-pick active" style="background:linear-gradient(135deg,#4a90d9,#3b7dd8)" data-theme="rhine" onclick="setTheme('rhine')" title="\u83b1\u8335\u84dd"></div>
+          <div class="theme-pick" style="background:linear-gradient(135deg,#a8c8e8,#7ab0d4)" data-theme="frost" onclick="setTheme('frost')" title="\u971c\u767d"></div>
+          <div class="theme-pick" style="background:linear-gradient(135deg,#78909c,#546e7a)" data-theme="graphite" onclick="setTheme('graphite')" title="\u77f3\u58a8"></div>
+          <div class="theme-pick" style="background:linear-gradient(135deg,#c8b89a,#a89470)" data-theme="ivory" onclick="setTheme('ivory')" title="\u8c61\u7259"></div>
+          <div class="theme-pick" style="background:linear-gradient(135deg,#5c9a8b,#3d7068)" data-theme="emerald" onclick="setTheme('emerald')" title="\u7fe0\u7eff"></div>
         </div>
       </div>
-
       <div class="settings-group">
         <label>\u6a21\u5f0f\u5207\u6362</label>
         <div class="mode-toggle" id="modeToggle" onclick="toggleMode()">
-          <span>\u2600</span>
-          <span class="toggle-label">\u65e5\u95f4\u6a21\u5f0f</span>
-          <span class="toggle-switch"></span>
-          <span>\u263e</span>
+          <span>\u2600</span><span class="toggle-label">\u65e5\u95f4\u6a21\u5f0f</span><span class="toggle-switch"></span><span>\u263e</span>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Confirm Dialog -->
+<!-- Confirm -->
 <div class="confirm-overlay hidden" id="confirmOverlay">
   <div class="confirm-dialog">
     <p id="confirmMessage">\u786e\u5b9a\uff1f</p>
@@ -696,23 +467,26 @@ body {
 </div>
 
 <script>
-/* ========== PDF.js Setup ========== */
 if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
 }
 
 /* ========== State ========== */
-const STORAGE_KEY = 'rheinlab_materials_v2';
-const TRASH_KEY = 'rheinlab_trash_v2';
+const STORAGE_KEY = 'rheinlab_v3';
+const TRASH_KEY = 'rheinlab_trash_v3';
 const SETTINGS_KEY = 'rheinlab_settings';
 
-let materials = [];  // { id, name, type, content, createdAt, lastPage, notes, pageCount, x, y }
-let trash = [];     // deleted materials with deletedAt timestamp
+let materials = [];
+let trash = [];
 let currentViewerMaterial = null;
 let viewerPdfDoc = null;
 let viewerCurrentPage = 1;
 let viewerTotalPages = 0;
 let viewerRotation = 0;
+let penToolActive = false;
+let eraserActive = false;
+let penColor = '#1a1a2e';
+let penWidth = 3;
 let notePanelOpen = false;
 let currentNotePage = 1;
 let noteMode = 'handwrite';
@@ -727,162 +501,77 @@ let noteCtx = null;
 let savedNoteImages = {};
 let trashViewOpen = false;
 let sidebarOpen = false;
-let sidebarHoverTimeout = null;
+let isFullscreen = false;
+let plusMenuOpen = false;
+
+// Per-page pen state
+let penCanvas = null;
+let penCtx = null;
+let penStrokes = [];
+let penCurrentStroke = [];
+let penIsDrawing = false;
+let pageSnapshots = {};  // { pageNum: dataURL }
 
 // Drag state
-let dragState = {
-  active: false,
-  materialId: null,
-  cardEl: null,
-  startX: 0, startY: 0,
-  origX: 0, origY: 0,
-  offsetX: 0, offsetY: 0,
-  longPressTimer: null,
-  longPressTriggered: false
-};
-
-// Delete timer
-let deleteTimer = null;
-let deleteMaterialId = null;
-let deleteCardEl = null;
+let dragState = { active:false, materialId:null, cardEl:null, startX:0, startY:0, origX:0, origY:0, offsetX:0, offsetY:0, longPressTimer:null, longPressTriggered:false };
+let pendingAction = null;
 
 /* ========== Persistence ========== */
 function saveMaterials() { localStorage.setItem(STORAGE_KEY, JSON.stringify(materials)); }
-function loadMaterials() {
-  const data = localStorage.getItem(STORAGE_KEY);
-  if (data) { try { materials = JSON.parse(data); } catch(e) { materials = []; } }
-}
+function loadMaterials() { const d = localStorage.getItem(STORAGE_KEY); if(d) { try { materials = JSON.parse(d); } catch(e) { materials = []; } } }
 function saveTrash() { localStorage.setItem(TRASH_KEY, JSON.stringify(trash)); }
-function loadTrash() {
-  const data = localStorage.getItem(TRASH_KEY);
-  if (data) { try { trash = JSON.parse(data); } catch(e) { trash = []; } }
-}
+function loadTrash() { const d = localStorage.getItem(TRASH_KEY); if(d) { try { trash = JSON.parse(d); } catch(e) { trash = []; } } }
 function saveSettings(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
-function loadSettings() {
-  const data = localStorage.getItem(SETTINGS_KEY);
-  if (data) { try { return JSON.parse(data); } catch(e) { return {}; } }
-  return {};
-}
-
-/* ========== Toast ========== */
-function showToast(msg) {
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 2000);
-  setTimeout(() => toast.remove(), 2500);
-}
+function loadSettings() { const d = localStorage.getItem(SETTINGS_KEY); if(d) { try { return JSON.parse(d); } catch(e) { return {}; } } return {}; }
 
 /* ========== Helpers ========== */
-function generateId() { return 'mat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6); }
-
-function getMaterialTypeLabel(type) {
-  const map = { empty: 'Blank', pdf: 'PDF', docx: 'DOCX', png: 'Image', jpg: 'Image', jpeg: 'Image' };
-  return map[type] || type.toUpperCase();
+function showToast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2000);
+  setTimeout(() => t.remove(), 2500);
 }
-
-function getMaterialIcon(type) {
-  const map = { empty: '\u25a1', pdf: '\u25a3', docx: '\u25a8', png: '\u25e2', jpg: '\u25e2', jpeg: '\u25e2' };
-  return map[type] || '\u25a1';
-}
-
-/* ====== Sidebar Auto-Hide ====== */
-const sidebar = document.getElementById('sidebar');
-const sidebarTrigger = document.getElementById('sidebarTrigger');
-
-function openSidebar() {
-  if (!sidebarOpen) {
-    sidebarOpen = true;
-    sidebar.classList.add('open');
-  }
-  if (sidebarHoverTimeout) { clearTimeout(sidebarHoverTimeout); sidebarHoverTimeout = null; }
-}
-
-function closeSidebar() {
-  if (sidebarOpen && !isCursorOnSidebar() && !isCursorOnTrigger()) {
-    sidebarHoverTimeout = setTimeout(() => {
-      sidebarOpen = false;
-      sidebar.classList.remove('open');
-    }, 300);
-  }
-}
-
-function isCursorOnSidebar() {
-  return sidebar.matches(':hover');
-}
-
-function isCursorOnTrigger() {
-  return sidebarTrigger.matches(':hover');
-}
-
-sidebarTrigger.addEventListener('mouseenter', () => {
-  openSidebar();
-});
-
-sidebar.addEventListener('mouseenter', () => {
-  openSidebar();
-});
-
-sidebar.addEventListener('mouseleave', () => {
-  // Small delay to check if moving to trigger
-  setTimeout(() => {
-    if (!isCursorOnSidebar() && !isCursorOnTrigger()) {
-      sidebarOpen = false;
-      sidebar.classList.remove('open');
-    }
-  }, 150);
-});
-
-sidebarTrigger.addEventListener('mouseleave', (e) => {
-  // Check if moving to sidebar
-  const rect = sidebar.getBoundingClientRect();
-  if (e.clientX < rect.right && e.clientX > 0) return; // moving into sidebar
-  setTimeout(() => {
-    if (!isCursorOnSidebar() && !isCursorOnTrigger()) {
-      sidebarOpen = false;
-      sidebar.classList.remove('open');
-    }
-  }, 150);
-});
-
-// Track mouse globally to close sidebar when far away
-document.addEventListener('mousemove', function(e) {
-  if (sidebarOpen && e.clientX > 280 && !isCursorOnSidebar()) {
-    closeSidebar();
-  }
-});
-
-/* ========== Material CRUD ========== */
-window.createEmptyMaterial = function() {
-  const name = prompt('\u8d44\u6599\u540d\u79f0\uff1a', 'New Material ' + (materials.length + trash.length + 1));
-  if (!name || !name.trim()) return;
-  const pos = findFreePosition();
-  const mat = {
-    id: generateId(), name: name.trim(), type: 'empty', content: null,
-    createdAt: Date.now(), lastPage: 1, notes: {}, pageCount: 1,
-    x: pos.x, y: pos.y
-  };
-  materials.push(mat);
-  saveMaterials();
-  renderAll();
-  showToast('Created: ' + mat.name);
-};
-
+function generateId() { return 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2,6); }
+function getMaterialIcon(type) { const m = { empty:'\u25a1', pdf:'\u25a3', docx:'\u25a8', png:'\u25e2', jpg:'\u25e2', jpeg:'\u25e2' }; return m[type] || '\u25a1'; }
+function getMaterialTypeLabel(type) { const m = { empty:'Blank', pdf:'PDF', docx:'DOCX', png:'Image', jpg:'Image', jpeg:'Image' }; return m[type] || type.toUpperCase(); }
 function findFreePosition() {
   const area = document.getElementById('cabinetArea');
   const w = area ? area.clientWidth : 800;
-  const cols = Math.max(1, Math.floor((w - 24) / 200));
+  const cols = Math.max(1, Math.floor((w - 20) / 195));
   const idx = materials.length;
-  return {
-    x: 12 + (idx % cols) * 200,
-    y: 12 + Math.floor(idx / cols) * 190
-  };
+  return { x: 10 + (idx % cols) * 195, y: 10 + Math.floor(idx / cols) * 175 };
 }
 
+/* ========== Sidebar Auto-Hide ========== */
+const sidebar = document.getElementById('sidebar');
+const sidebarTrigger = document.getElementById('sidebarTrigger');
+
+function showSidebar() { sidebarOpen = true; sidebar.classList.add('open'); }
+function hideSidebar() {
+  setTimeout(() => {
+    if (!sidebar.matches(':hover') && !sidebarTrigger.matches(':hover')) {
+      sidebarOpen = false; sidebar.classList.remove('open');
+    }
+  }, 200);
+}
+
+sidebarTrigger.addEventListener('mouseenter', showSidebar);
+sidebar.addEventListener('mouseenter', showSidebar);
+sidebar.addEventListener('mouseleave', hideSidebar);
+sidebarTrigger.addEventListener('mouseleave', function(e) {
+  const r = sidebar.getBoundingClientRect();
+  if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
+  hideSidebar();
+});
+document.addEventListener('mousemove', function(e) {
+  if (sidebarOpen && e.clientX > 280) {
+    if (!sidebar.matches(':hover')) hideSidebar();
+  }
+});
+
+/* ========== Material Import ========== */
 window.handleFileImport = async function(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  const file = event.target.files[0]; if (!file) return;
   const name = file.name.replace(/\.[^.]+$/, '');
   let type = file.name.split('.').pop().toLowerCase();
   if (type === 'jpg') type = 'jpeg';
@@ -893,29 +582,30 @@ window.handleFileImport = async function(event) {
     const pos = findFreePosition();
     const mat = {
       id: generateId(), name: name, type: type, content: e.target.result,
-      createdAt: Date.now(), lastPage: 1, notes: {}, pageCount: 1,
-      x: pos.x, y: pos.y
+      createdAt: Date.now(), lastPage: 1, pageCount: 1,
+      x: pos.x, y: pos.y, notes: {}, pageAnnotations: {}, extraPages: {}
     };
+
     if (type === 'pdf' && typeof pdfjsLib !== 'undefined') {
       try {
-        const base64Data = e.target.result.split('base64,')[1];
-        const binary = atob(base64Data);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const b64 = e.target.result.split('base64,')[1];
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
         const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
         mat.pageCount = pdf.numPages;
       } catch(err) { mat.pageCount = 1; }
     }
+
     materials.push(mat);
-    saveMaterials();
-    renderAll();
+    saveMaterials(); renderAll();
     showToast('Imported: ' + file.name);
   };
   reader.readAsDataURL(file);
   event.target.value = '';
 };
 
-/* ====== Drag & Drop ====== */
+/* ========== Drag & Drop ========== */
 function initDragEvents() {
   document.querySelectorAll('.cabinet-card').forEach(card => {
     card.addEventListener('mousedown', onDragStart);
@@ -928,104 +618,68 @@ function onDragStart(e) {
   const matId = card.dataset.materialId;
   if (!matId || dragState.active) return;
 
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  // Don't start drag if clicking delete button
+  if (e.target.closest('.delete-btn')) return;
 
-  dragState.materialId = matId;
-  dragState.cardEl = card;
-  dragState.startX = clientX;
-  dragState.startY = clientY;
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+
+  dragState.materialId = matId; dragState.cardEl = card;
+  dragState.startX = cx; dragState.startY = cy;
   dragState.longPressTriggered = false;
 
-  // 1 second long-press to start drag
   dragState.longPressTimer = setTimeout(() => {
     dragState.longPressTriggered = true;
-    startDragging(clientX, clientY);
+    startDragging(cx, cy);
   }, 1000);
 
   card.classList.add('long-pressing');
-
-  // Also start delete timer (3 seconds)
-  deleteMaterialId = matId;
-  deleteCardEl = card;
-  deleteTimer = setTimeout(() => {
-    deleteCardEl.classList.add('cracking');
-    // After animation completes (2.5s from start = 5.5s total)
-    setTimeout(() => {
-      finishDelete(matId);
-    }, 2500);
-  }, 3000);
-
   document.addEventListener('mousemove', onDragMove);
   document.addEventListener('mouseup', onDragEnd);
   document.addEventListener('touchmove', onDragMove, { passive: false });
   document.addEventListener('touchend', onDragEnd);
 }
 
-function startDragging(clientX, clientY) {
-  // Cancel delete timer if drag started
-  if (deleteTimer) { clearTimeout(deleteTimer); deleteTimer = null; }
-  deleteMaterialId = null;
-  deleteCardEl = null;
-
+function startDragging(cx, cy) {
   dragState.active = true;
   const card = dragState.cardEl;
   card.classList.remove('long-pressing');
   card.classList.add('dragging');
-
   const rect = card.getBoundingClientRect();
   dragState.origX = parseInt(card.style.left) || 0;
   dragState.origY = parseInt(card.style.top) || 0;
-  dragState.offsetX = clientX - rect.left;
-  dragState.offsetY = clientY - rect.top;
+  dragState.offsetX = cx - rect.left;
+  dragState.offsetY = cy - rect.top;
 }
 
 function onDragMove(e) {
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
 
-  // If drag hasn't started and moved > 5px, cancel long press and delete
   if (!dragState.active && !dragState.longPressTriggered) {
-    const dx = clientX - dragState.startX;
-    const dy = clientY - dragState.startY;
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-      cancelDrag();
-      return;
+    if (Math.abs(cx - dragState.startX) > 5 || Math.abs(cy - dragState.startY) > 5) {
+      cancelDrag(); return;
     }
   }
-
   if (!dragState.active) return;
   e.preventDefault();
 
   const area = document.getElementById('cabinetArea');
-  const areaRect = area.getBoundingClientRect();
-  const newX = clientX - areaRect.left - dragState.offsetX;
-  const newY = clientY - areaRect.top - dragState.offsetY;
-
-  dragState.cardEl.style.left = Math.max(0, newX) + 'px';
-  dragState.cardEl.style.top = Math.max(0, newY) + 'px';
+  const ar = area.getBoundingClientRect();
+  dragState.cardEl.style.left = Math.max(0, cx - ar.left - dragState.offsetX) + 'px';
+  dragState.cardEl.style.top = Math.max(0, cy - ar.top - dragState.offsetY) + 'px';
 }
 
-function onDragEnd(e) {
+function onDragEnd() {
   document.removeEventListener('mousemove', onDragMove);
   document.removeEventListener('mouseup', onDragEnd);
   document.removeEventListener('touchmove', onDragMove);
   document.removeEventListener('touchend', onDragEnd);
 
-  // Cancel pending timers
   if (dragState.longPressTimer) { clearTimeout(dragState.longPressTimer); dragState.longPressTimer = null; }
-  if (deleteTimer) { clearTimeout(deleteTimer); deleteTimer = null; }
-
-  // Cancel delete if not yet cracking
-  if (deleteCardEl && !deleteCardEl.classList.contains('cracking')) {
-    deleteCardEl.classList.remove('long-pressing');
-    deleteMaterialId = null;
-    deleteCardEl = null;
-  }
 
   if (dragState.active) {
     dragState.cardEl.classList.remove('dragging');
-    // Save position
     const mat = materials.find(m => m.id === dragState.materialId);
     if (mat) {
       mat.x = parseInt(dragState.cardEl.style.left) || dragState.origX;
@@ -1033,229 +687,41 @@ function onDragEnd(e) {
       saveMaterials();
     }
   } else if (!dragState.longPressTriggered && dragState.cardEl) {
-    // Short click = open
     dragState.cardEl.classList.remove('long-pressing');
     const matId = dragState.materialId;
     if (matId) window.openMaterial(matId);
   }
 
-  dragState.active = false;
-  dragState.materialId = null;
-  dragState.cardEl = null;
-  dragState.longPressTriggered = false;
+  dragState.active = false; dragState.materialId = null;
+  dragState.cardEl = null; dragState.longPressTriggered = false;
 }
 
 function cancelDrag() {
   if (dragState.longPressTimer) { clearTimeout(dragState.longPressTimer); dragState.longPressTimer = null; }
-  if (deleteTimer) { clearTimeout(deleteTimer); deleteTimer = null; }
   if (dragState.cardEl) dragState.cardEl.classList.remove('long-pressing');
-  deleteMaterialId = null;
-  deleteCardEl = null;
   dragState.active = false;
 }
 
-function finishDelete(matId) {
+/* ========== Hover Delete ========== */
+window.deleteCardFromCabinet = function(matId) {
   const idx = materials.findIndex(m => m.id === matId);
   if (idx === -1) return;
   const [deleted] = materials.splice(idx, 1);
   deleted.deletedAt = Date.now();
   trash.push(deleted);
-  saveMaterials();
-  saveTrash();
-  deleteMaterialId = null;
-  deleteCardEl = null;
+  saveMaterials(); saveTrash();
+  // Also close viewer if this material was open
+  if (currentViewerMaterial && currentViewerMaterial.id === matId) closeViewer();
   renderAll();
-  showToast('Moved to trash: ' + deleted.name);
-}
-
-/* ========== Open Material ========== */
-window.openMaterial = function(matId) {
-  const mat = materials.find(m => m.id === matId);
-  if (!mat) return;
-  currentViewerMaterial = mat;
-  viewerCurrentPage = mat.lastPage || 1;
-  viewerRotation = 0;
-  notePanelOpen = false;
-  currentNotePage = viewerCurrentPage;
-  document.getElementById('viewerTitle').textContent = mat.name;
-  document.getElementById('viewerOverlay').classList.remove('hidden');
-  document.getElementById('notePanel').classList.add('hidden');
-  document.getElementById('notePanel').innerHTML = '';
-  if (mat.type === 'pdf') openPdfViewer(mat);
-  else if (mat.type === 'docx') openDocxViewer(mat);
-  else if (mat.type === 'png' || mat.type === 'jpeg') openImageViewer(mat);
-  else openEmptyViewer(mat);
-  updateSidebarActive(matId);
+  showToast('Moved to trash');
 };
 
-/* ========== PDF Viewer ========== */
-async function openPdfViewer(mat) {
-  if (typeof pdfjsLib === 'undefined') { document.getElementById('viewerContent').innerHTML = '<p>PDF.js not loaded</p>'; return; }
-  try {
-    const base64Data = mat.content.split('base64,')[1];
-    const binary = atob(base64Data);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    viewerPdfDoc = await pdfjsLib.getDocument({ data: bytes }).promise;
-    viewerTotalPages = viewerPdfDoc.numPages;
-    mat.pageCount = viewerTotalPages;
-    viewerCurrentPage = Math.min(viewerCurrentPage, viewerTotalPages);
-    renderPdfPage(viewerCurrentPage);
-    updateViewerFooter();
-  } catch(err) { document.getElementById('viewerContent').innerHTML = '<p>PDF error: ' + err.message + '</p>'; }
-}
-
-async function renderPdfPage(pageNum) {
-  if (!viewerPdfDoc) return;
-  const page = await viewerPdfDoc.getPage(pageNum);
-  const viewport = page.getViewport({ scale: 1.5, rotation: viewerRotation });
-  const canvas = document.createElement('canvas');
-  canvas.className = 'page-canvas';
-  canvas.width = viewport.width; canvas.height = viewport.height;
-  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-  const container = document.getElementById('viewerContent');
-  container.innerHTML = ''; container.appendChild(canvas);
-}
-
-async function openDocxViewer(mat) {
-  if (typeof mammoth === 'undefined') { document.getElementById('viewerContent').innerHTML = '<p>Mammoth.js not loaded</p>'; return; }
-  try {
-    const base64Data = mat.content.split('base64,')[1];
-    const binary = atob(base64Data);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer });
-    document.getElementById('viewerContent').innerHTML = '<div class="docx-content">' + result.value + '</div>';
-    viewerTotalPages = 1; updateViewerFooter();
-  } catch(err) { document.getElementById('viewerContent').innerHTML = '<p>DOCX error: ' + err.message + '</p>'; }
-}
-
-function openImageViewer(mat) {
-  document.getElementById('viewerContent').innerHTML = '<img src="' + mat.content + '" class="page-canvas" style="max-width:100%;max-height:100%;object-fit:contain;transform:rotate(' + viewerRotation + 'deg)">';
-  viewerTotalPages = 1; updateViewerFooter();
-}
-
-function openEmptyViewer(mat) {
-  document.getElementById('viewerContent').innerHTML = '<div style="text-align:center;color:var(--text-secondary)"><div style="font-size:48px;margin-bottom:12px">\u25a1</div><p>Empty Material</p></div>';
-  viewerTotalPages = 1; updateViewerFooter();
-}
-
-/* ========== Viewer Controls ========== */
-function updateViewerFooter() {
-  document.getElementById('pageInput').value = viewerCurrentPage;
-  document.getElementById('pageInput').max = viewerTotalPages;
-  document.getElementById('pageInfo').textContent = '/ ' + viewerTotalPages;
-  document.getElementById('btnPrev').disabled = viewerCurrentPage <= 1;
-  document.getElementById('btnNext').disabled = viewerCurrentPage >= viewerTotalPages;
-}
-window.viewerPrevPage = function() { if (viewerCurrentPage > 1) { viewerCurrentPage--; goToViewerPage(viewerCurrentPage); } };
-window.viewerNextPage = function() { if (viewerCurrentPage < viewerTotalPages) { viewerCurrentPage++; goToViewerPage(viewerCurrentPage); } };
-window.viewerJumpPage = function() {
-  const page = prompt('Jump to (1-' + viewerTotalPages + '):', viewerCurrentPage);
-  if (page !== null) { const p = parseInt(page); if (p >= 1 && p <= viewerTotalPages) { viewerCurrentPage = p; goToViewerPage(p); } }
-};
-window.viewerGoToPage = function() {
-  const p = parseInt(document.getElementById('pageInput').value);
-  if (p >= 1 && p <= viewerTotalPages) { viewerCurrentPage = p; goToViewerPage(p); }
-};
-function goToViewerPage(pageNum) {
-  viewerCurrentPage = pageNum; currentNotePage = pageNum;
-  if (currentViewerMaterial) { currentViewerMaterial.lastPage = pageNum; saveMaterials(); }
-  const mat = currentViewerMaterial;
-  if (!mat) return;
-  if (mat.type === 'pdf') renderPdfPage(pageNum);
-  else if (mat.type === 'png' || mat.type === 'jpeg') openImageViewer(mat);
-  updateViewerFooter();
-  if (notePanelOpen) openNotePanel(pageNum);
-}
-window.viewerRotate = function(deg) { viewerRotation = (viewerRotation + deg) % 360; goToViewerPage(viewerCurrentPage); };
-window.closeViewer = function() {
-  document.getElementById('viewerOverlay').classList.add('hidden');
-  viewerPdfDoc = null; currentViewerMaterial = null; notePanelOpen = false;
-  document.getElementById('notePanel').classList.add('hidden');
-  document.getElementById('notePanel').innerHTML = '';
-  renderAll();
-};
-
-/* ========== Render ========== */
-function renderAll() {
-  renderCabinet();
-  renderSidebar();
-  renderTrashView();
-  updateTrashBadge();
-  initDragEvents();
-}
-
-function renderCabinet() {
-  const area = document.getElementById('cabinetArea');
-  const emptyState = document.getElementById('emptyState');
-
-  // Remove old cards
-  area.querySelectorAll('.cabinet-card').forEach(c => c.remove());
-
-  if (materials.length === 0) {
-    emptyState.classList.remove('hidden');
-    return;
-  }
-  emptyState.classList.add('hidden');
-
-  materials.forEach(mat => {
-    const card = document.createElement('div');
-    card.className = 'cabinet-card';
-    card.dataset.materialId = mat.id;
-    card.style.left = (mat.x || 0) + 'px';
-    card.style.top = (mat.y || 0) + 'px';
-    card.innerHTML =
-      '<div class="card-accent"></div>' +
-      '<div class="card-icon">' + getMaterialIcon(mat.type) + '</div>' +
-      '<div class="card-name" title="' + mat.name + '">' + mat.name + '</div>' +
-      '<div class="card-meta"><span>' + new Date(mat.createdAt).toLocaleDateString('zh-CN') + '</span>' +
-      (mat.pageCount ? '<span>' + mat.pageCount + 'p</span>' : '') + '</div>' +
-      '<div class="card-type">' + getMaterialTypeLabel(mat.type) + '</div>';
-    area.appendChild(card);
-  });
-}
-
-function renderSidebar() {
-  const list = document.getElementById('sidebarList');
-  if (materials.length === 0) {
-    list.innerHTML = '<li style="padding:20px;text-align:center;opacity:0.4;font-size:12px">No Materials</li>';
-  } else {
-    const activeId = currentViewerMaterial ? currentViewerMaterial.id : null;
-    list.innerHTML = materials.map(mat =>
-      '<li class="sidebar-item ' + (mat.id === activeId ? 'active' : '') + '" onclick="openMaterial(\'' + mat.id + '\')" title="' + mat.name + '">' +
-      '<span class="item-icon">' + getMaterialIcon(mat.type) + '</span>' +
-      '<span style="overflow:hidden;text-overflow:ellipsis">' + mat.name + '</span>' +
-      (mat.notes && Object.keys(mat.notes).length > 0 ? '<span class="item-badge">' + Object.keys(mat.notes).length + '</span>' : '') +
-      '</li>'
-    ).join('');
-  }
-}
-
-function updateSidebarActive(matId) {
-  document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
-  const items = document.querySelectorAll('#sidebarList .sidebar-item');
-  const idx = materials.findIndex(m => m.id === matId);
-  if (idx >= 0 && items[idx]) items[idx].classList.add('active');
-}
-
-function updateTrashBadge() {
-  const item = document.getElementById('trashSidebarItem');
-  const count = document.getElementById('trashCount');
-  if (trash.length > 0) {
-    item.style.display = '';
-    count.textContent = trash.length;
-  } else {
-    item.style.display = 'none';
-  }
-}
-
-/* ========== Trash View ========== */
+/* ========== Trash ========== */
 window.openTrash = function() {
   trashViewOpen = true;
   document.getElementById('mainView').classList.add('hidden');
   document.getElementById('trashView').classList.remove('hidden');
-  document.querySelector('.topbar-title').textContent = '\u267b \u56de\u6536\u7ad9 \u00b7 Trash';
+  document.querySelector('.topbar-title').textContent = '\u267b \u56de\u6536\u7ad9';
   renderTrashView();
 };
 
@@ -1272,13 +738,13 @@ function renderTrashView() {
     grid.innerHTML = '<div class="empty-state"><div class="empty-icon">\u25a1</div><p>\u56de\u6536\u7ad9\u4e3a\u7a7a</p></div>';
     return;
   }
-  grid.innerHTML = trash.map((mat, idx) =>
+  grid.innerHTML = trash.map((mat, i) =>
     '<div class="trash-card">' +
     '<div class="trash-card-name">' + getMaterialIcon(mat.type) + ' ' + mat.name + '</div>' +
-    '<div class="trash-card-meta">' + getMaterialTypeLabel(mat.type) + ' | Deleted ' + new Date(mat.deletedAt).toLocaleDateString('zh-CN') + '</div>' +
+    '<div class="trash-card-meta">' + getMaterialTypeLabel(mat.type) + ' | ' + new Date(mat.deletedAt).toLocaleDateString('zh-CN') + '</div>' +
     '<div class="trash-actions">' +
-    '<button class="btn-restore" onclick="restoreFromTrash(' + idx + ')">\u21a9 \u6062\u590d</button>' +
-    '<button class="btn-delete" onclick="permanentDelete(' + idx + ')">\u2716 \u5f7b\u5e95\u5220\u9664</button>' +
+    '<button class="btn-restore" onclick="restoreFromTrash(' + i + ')">\u21a9 \u6062\u590d</button>' +
+    '<button class="btn-delete" onclick="permanentDelete(' + i + ')">\u2716 \u5f7b\u5e95\u5220\u9664</button>' +
     '</div></div>'
   ).join('');
 }
@@ -1290,8 +756,7 @@ window.restoreFromTrash = function(idx) {
   const pos = findFreePosition();
   mat.x = pos.x; mat.y = pos.y;
   materials.push(mat);
-  saveMaterials();
-  saveTrash();
+  saveMaterials(); saveTrash();
   renderAll();
   if (trash.length === 0) closeTrash();
   showToast('Restored: ' + mat.name);
@@ -1300,23 +765,525 @@ window.restoreFromTrash = function(idx) {
 window.permanentDelete = function(idx) {
   if (idx < 0 || idx >= trash.length) return;
   const mat = trash[idx];
-  pendingAction = { type: 'permDelete', idx: idx, name: mat.name };
+  pendingAction = { type:'permDelete', idx:idx, name:mat.name };
   document.getElementById('confirmMessage').textContent = 'Permanently delete "' + mat.name + '"? This cannot be undone.';
   document.getElementById('confirmOverlay').classList.remove('hidden');
   document.getElementById('confirmOkBtn').onclick = confirmPermDelete;
 };
 
-let pendingAction = null;
-
 function confirmPermDelete() {
   if (!pendingAction || pendingAction.type !== 'permDelete') return;
   trash.splice(pendingAction.idx, 1);
-  saveTrash();
-  pendingAction = null;
-  closeConfirm();
-  renderAll();
+  saveTrash(); pendingAction = null;
+  closeConfirm(); renderAll();
   if (trash.length === 0) closeTrash();
   showToast('Permanently deleted');
+}
+
+window.closeConfirm = function() { document.getElementById('confirmOverlay').classList.add('hidden'); pendingAction = null; };
+
+/* ========== Open Material ========== */
+window.openMaterial = function(matId) {
+  const mat = materials.find(m => m.id === matId);
+  if (!mat) return;
+  currentViewerMaterial = mat;
+  viewerCurrentPage = mat.lastPage || 1;
+  viewerRotation = 0;
+  notePanelOpen = false; penToolActive = false; eraserActive = false;
+  penStrokes = []; pageSnapshots = {};
+  currentNotePage = viewerCurrentPage;
+
+  document.getElementById('viewerTitle').textContent = mat.name;
+  document.getElementById('viewerOverlay').classList.remove('hidden');
+  document.getElementById('notePanel').classList.add('hidden');
+  document.getElementById('notePanel').innerHTML = '';
+  document.getElementById('penToolbar').style.display = 'none';
+  document.getElementById('penToolBtn').classList.remove('active-tool');
+  document.getElementById('eraserToolBtn').classList.remove('active-tool');
+
+  if (mat.type === 'pdf') openPdfViewer(mat);
+  else if (mat.type === 'docx') openDocxViewer(mat);
+  else if (mat.type === 'png' || mat.type === 'jpeg') openImageViewer(mat);
+  else openEmptyViewer(mat);
+
+  updateSidebarActive(matId);
+};
+
+/* ========== PDF Viewer ========== */
+async function openPdfViewer(mat) {
+  if (typeof pdfjsLib === 'undefined') { document.getElementById('viewerContent').innerHTML = '<p>PDF.js not loaded</p>'; return; }
+  try {
+    const b64 = mat.content.split('base64,')[1];
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    viewerPdfDoc = await pdfjsLib.getDocument({ data: bytes }).promise;
+    // Count pages: actual PDF pages + extra blank pages
+    viewerTotalPages = viewerPdfDoc.numPages + Object.keys(mat.extraPages || {}).length;
+    mat.pageCount = viewerTotalPages;
+    viewerCurrentPage = Math.min(viewerCurrentPage, viewerTotalPages);
+    renderCurrentPage();
+    updateViewerFooter();
+  } catch(err) { document.getElementById('viewerContent').innerHTML = '<p>PDF error: ' + err.message + '</p>'; }
+}
+
+async function renderCurrentPage() {
+  const mat = currentViewerMaterial;
+  if (!mat) return;
+
+  const container = document.getElementById('viewerContent');
+  const pdfPageCount = viewerPdfDoc ? viewerPdfDoc.numPages : 0;
+
+  // Check if this is an extra blank page
+  if (viewerCurrentPage > pdfPageCount && mat.extraPages && mat.extraPages[viewerCurrentPage]) {
+    // Render blank page
+    container.innerHTML =
+      '<div class="page-wrapper">' +
+      '<canvas class="page-canvas" id="pageCanvas" width="800" height="1100" style="background:#fff"></canvas>' +
+      '<canvas class="pen-canvas" id="penCanvas" width="800" height="1100"></canvas>' +
+      '</div>';
+    initPenCanvas(viewerCurrentPage);
+    return;
+  }
+
+  if (mat.type === 'pdf' && viewerPdfDoc && viewerCurrentPage <= pdfPageCount) {
+    const page = await viewerPdfDoc.getPage(viewerCurrentPage);
+    const scale = isFullscreen ? 2.0 : 1.5;
+    const viewport = page.getViewport({ scale, rotation: viewerRotation });
+
+    container.innerHTML =
+      '<div class="page-wrapper">' +
+      '<canvas class="page-canvas" id="pageCanvas" width="' + viewport.width + '" height="' + viewport.height + '"></canvas>' +
+      '<canvas class="pen-canvas" id="penCanvas" width="' + viewport.width + '" height="' + viewport.height + '"></canvas>' +
+      '</div>';
+
+    const pc = document.getElementById('pageCanvas');
+    await page.render({ canvasContext: pc.getContext('2d'), viewport }).promise;
+    initPenCanvas(viewerCurrentPage);
+  } else if ((mat.type === 'png' || mat.type === 'jpeg') && viewerCurrentPage === 1) {
+    container.innerHTML =
+      '<div class="page-wrapper">' +
+      '<img src="' + mat.content + '" class="page-canvas" id="pageImage" style="max-width:100%;max-height:100%;transform:rotate(' + viewerRotation + 'deg)">' +
+      '<canvas class="pen-canvas" id="penCanvas" style="position:absolute;top:0;left:0"></canvas>' +
+      '</div>';
+    setTimeout(() => {
+      const img = document.getElementById('pageImage');
+      const pc = document.getElementById('penCanvas');
+      if (img && pc) {
+        pc.width = img.naturalWidth || img.clientWidth;
+        pc.height = img.naturalHeight || img.clientHeight;
+      }
+      initPenCanvas(viewerCurrentPage);
+    }, 100);
+  }
+}
+
+/* ========== Pen on Pages ========== */
+function initPenCanvas(pageNum) {
+  penCanvas = document.getElementById('penCanvas');
+  if (!penCanvas) return;
+  penCtx = penCanvas.getContext('2d');
+  penStrokes = [];
+
+  // Restore from snapshot
+  if (pageSnapshots[pageNum]) {
+    const img = new Image();
+    img.onload = () => { penCtx.drawImage(img, 0, 0); };
+    img.src = pageSnapshots[pageNum];
+  } else {
+    // Restore from stored annotations
+    const mat = currentViewerMaterial;
+    if (mat && mat.pageAnnotations && mat.pageAnnotations[pageNum]) {
+      const ann = mat.pageAnnotations[pageNum];
+      if (ann.strokes) {
+        penStrokes = ann.strokes;
+        redrawPenStrokes();
+      } else if (ann.imageData) {
+        const img = new Image();
+        img.onload = () => { penCtx.drawImage(img, 0, 0); };
+        img.src = ann.imageData;
+      }
+    }
+  }
+
+  penCanvas.onmousedown = penStart;
+  penCanvas.onmousemove = penMove;
+  penCanvas.onmouseup = penEnd;
+  penCanvas.onmouseleave = penEnd;
+  penCanvas.ontouchstart = (e) => { e.preventDefault(); penStart(e.touches[0]); };
+  penCanvas.ontouchmove = (e) => { e.preventDefault(); penMove(e.touches[0]); };
+  penCanvas.ontouchend = penEnd;
+}
+
+function redrawPenStrokes() {
+  if (!penCtx || !penCanvas) return;
+  penCtx.clearRect(0, 0, penCanvas.width, penCanvas.height);
+  for (const stroke of penStrokes) {
+    if (stroke.length < 2) continue;
+    penCtx.beginPath();
+    penCtx.strokeStyle = stroke[0].color;
+    penCtx.lineWidth = stroke[0].lineWidth;
+    penCtx.lineCap = 'round'; penCtx.lineJoin = 'round';
+    penCtx.globalCompositeOperation = stroke[0].tool === 'eraser' ? 'destination-out' : 'source-over';
+    penCtx.moveTo(stroke[0].x, stroke[0].y);
+    for (let i = 1; i < stroke.length; i++) penCtx.lineTo(stroke[i].x, stroke[i].y);
+    penCtx.stroke();
+  }
+  penCtx.globalCompositeOperation = 'source-over';
+}
+
+function penStart(e) {
+  if (!penToolActive && !eraserActive) return;
+  penIsDrawing = true;
+  const rect = penCanvas.getBoundingClientRect();
+  const sx = penCanvas.width / rect.width;
+  const sy = penCanvas.height / rect.height;
+  const pt = {
+    x: (e.clientX - rect.left) * sx,
+    y: (e.clientY - rect.top) * sy,
+    color: eraserActive ? 'rgba(0,0,0,1)' : penColor,
+    lineWidth: penWidth,
+    tool: eraserActive ? 'eraser' : 'pen'
+  };
+  penCurrentStroke = [pt];
+}
+
+function penMove(e) {
+  if (!penIsDrawing) return;
+  const rect = penCanvas.getBoundingClientRect();
+  const sx = penCanvas.width / rect.width;
+  const sy = penCanvas.height / rect.height;
+  const pt = {
+    x: (e.clientX - rect.left) * sx,
+    y: (e.clientY - rect.top) * sy,
+    color: eraserActive ? 'rgba(0,0,0,1)' : penColor,
+    lineWidth: penWidth,
+    tool: eraserActive ? 'eraser' : 'pen'
+  };
+  penCurrentStroke.push(pt);
+
+  const prev = penCurrentStroke[penCurrentStroke.length - 2];
+  penCtx.beginPath();
+  penCtx.strokeStyle = pt.color; penCtx.lineWidth = pt.lineWidth;
+  penCtx.lineCap = 'round'; penCtx.lineJoin = 'round';
+  penCtx.globalCompositeOperation = eraserActive ? 'destination-out' : 'source-over';
+  penCtx.moveTo(prev.x, prev.y); penCtx.lineTo(pt.x, pt.y);
+  penCtx.stroke();
+  penCtx.globalCompositeOperation = 'source-over';
+}
+
+function penEnd() {
+  if (!penIsDrawing) return;
+  penIsDrawing = false;
+  if (penCurrentStroke.length > 0) penStrokes.push(penCurrentStroke);
+  penCurrentStroke = [];
+  if (penCanvas) pageSnapshots[viewerCurrentPage] = penCanvas.toDataURL();
+  savePageAnnotations();
+}
+
+window.undoPenStroke = function() {
+  if (penStrokes.length === 0) return;
+  penStrokes.pop();
+  redrawPenStrokes();
+  if (penCanvas) pageSnapshots[viewerCurrentPage] = penCanvas.toDataURL();
+  savePageAnnotations();
+};
+
+function savePageAnnotations() {
+  const mat = currentViewerMaterial;
+  if (!mat) return;
+  if (!mat.pageAnnotations) mat.pageAnnotations = {};
+  const key = viewerCurrentPage;
+  if (penStrokes.length > 0 || pageSnapshots[key]) {
+    mat.pageAnnotations[key] = {
+      strokes: JSON.parse(JSON.stringify(penStrokes)),
+      imageData: pageSnapshots[key] || null
+    };
+  } else {
+    delete mat.pageAnnotations[key];
+  }
+  saveMaterials();
+}
+
+window.togglePenTool = function() {
+  penToolActive = !penToolActive;
+  eraserActive = false;
+  const tb = document.getElementById('penToolbar');
+  const btn = document.getElementById('penToolBtn');
+  const ebtn = document.getElementById('eraserToolBtn');
+  if (penToolActive) {
+    tb.style.display = 'flex';
+    btn.classList.add('active-tool');
+    ebtn.classList.remove('active-tool');
+  } else {
+    tb.style.display = 'none';
+    btn.classList.remove('active-tool');
+  }
+};
+
+window.toggleEraser = function() {
+  eraserActive = !eraserActive;
+  if (eraserActive) penToolActive = true;
+  const ebtn = document.getElementById('eraserToolBtn');
+  const btn = document.getElementById('penToolBtn');
+  const tb = document.getElementById('penToolbar');
+  if (eraserActive) {
+    ebtn.classList.add('active-tool');
+    btn.classList.add('active-tool');
+    tb.style.display = 'flex';
+  } else {
+    ebtn.classList.remove('active-tool');
+  }
+};
+
+window.setPenColor = function(color, el) {
+  penColor = color;
+  eraserActive = false;
+  document.getElementById('eraserToolBtn').classList.remove('active-tool');
+  document.querySelectorAll('.pen-color').forEach(d => d.classList.remove('active'));
+  if (el) el.classList.add('active');
+};
+
+/* ========== DOCX / Image / Empty Viewer ========== */
+async function openDocxViewer(mat) {
+  if (typeof mammoth === 'undefined') { document.getElementById('viewerContent').innerHTML = '<p>Mammoth.js not loaded</p>'; return; }
+  try {
+    const b64 = mat.content.split('base64,')[1];
+    const bin = atob(b64); const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer });
+    document.getElementById('viewerContent').innerHTML = '<div class="docx-content">' + result.value + '</div>';
+    viewerTotalPages = 1 + Object.keys(mat.extraPages || {}).length;
+    updateViewerFooter();
+  } catch(err) { document.getElementById('viewerContent').innerHTML = '<p>DOCX error: ' + err.message + '</p>'; }
+}
+
+function openImageViewer(mat) {
+  viewerTotalPages = 1 + Object.keys(mat.extraPages || {}).length;
+  viewerCurrentPage = Math.min(viewerCurrentPage, viewerTotalPages);
+  renderCurrentPage();
+  updateViewerFooter();
+}
+
+function openEmptyViewer(mat) {
+  document.getElementById('viewerContent').innerHTML = '<div style="text-align:center;color:var(--text-secondary)"><div style="font-size:44px;margin-bottom:8px">\u25a1</div><p>Empty Material</p></div>';
+  viewerTotalPages = 1 + Object.keys(mat.extraPages || {}).length;
+  updateViewerFooter();
+}
+
+/* ========== Viewer Controls ========== */
+function updateViewerFooter() {
+  document.getElementById('pageInput').value = viewerCurrentPage;
+  document.getElementById('pageInput').max = viewerTotalPages;
+  document.getElementById('pageInfo').textContent = viewerCurrentPage + ' / ' + viewerTotalPages;
+  document.getElementById('btnPrev').disabled = viewerCurrentPage <= 1;
+  document.getElementById('btnNext').disabled = viewerCurrentPage >= viewerTotalPages;
+}
+window.viewerPrevPage = function() { if (viewerCurrentPage > 1) { viewerCurrentPage--; goToViewerPage(viewerCurrentPage); } };
+window.viewerNextPage = function() { if (viewerCurrentPage < viewerTotalPages) { viewerCurrentPage++; goToViewerPage(viewerCurrentPage); } };
+window.viewerJumpPage = function() {
+  const page = prompt('Jump to (1-' + viewerTotalPages + '):', viewerCurrentPage);
+  if (page) { const p = parseInt(page); if (p >= 1 && p <= viewerTotalPages) { viewerCurrentPage = p; goToViewerPage(p); } }
+};
+window.viewerGoToPage = function() {
+  const p = parseInt(document.getElementById('pageInput').value);
+  if (p >= 1 && p <= viewerTotalPages) { viewerCurrentPage = p; goToViewerPage(p); }
+};
+
+function goToViewerPage(pageNum) {
+  // Save annotations for current page first
+  if (penCanvas) pageSnapshots[viewerCurrentPage] = penCanvas.toDataURL();
+  savePageAnnotations();
+
+  viewerCurrentPage = pageNum;
+  currentNotePage = pageNum;
+  if (currentViewerMaterial) { currentViewerMaterial.lastPage = pageNum; saveMaterials(); }
+
+  renderCurrentPage();
+  updateViewerFooter();
+
+  // Reset pen state but keep tool active
+  penStrokes = [];
+  if (penToolActive) {
+    setTimeout(() => initPenCanvas(pageNum), 100);
+  }
+}
+
+window.viewerRotate = function(deg) {
+  viewerRotation = (viewerRotation + deg) % 360;
+  goToViewerPage(viewerCurrentPage);
+};
+
+window.closeViewer = function() {
+  if (penCanvas) pageSnapshots[viewerCurrentPage] = penCanvas.toDataURL();
+  savePageAnnotations();
+  document.getElementById('viewerOverlay').classList.add('hidden');
+  viewerPdfDoc = null; currentViewerMaterial = null;
+  notePanelOpen = false; penToolActive = false; eraserActive = false;
+  document.getElementById('notePanel').classList.add('hidden');
+  document.getElementById('notePanel').innerHTML = '';
+  document.getElementById('penToolbar').style.display = 'none';
+  document.getElementById('penToolBtn').classList.remove('active-tool');
+  document.getElementById('eraserToolBtn').classList.remove('active-tool');
+  if (isFullscreen) exitFullscreen();
+  renderAll();
+};
+
+window.deleteMaterial = function() {
+  if (!currentViewerMaterial) return;
+  const mat = currentViewerMaterial;
+  trash.push({ ...mat, deletedAt: Date.now() });
+  materials = materials.filter(m => m.id !== mat.id);
+  saveMaterials(); saveTrash();
+  closeViewer(); renderAll();
+  showToast('Moved to trash: ' + mat.name);
+};
+
+/* ========== Fullscreen ========== */
+window.toggleFullscreen = function() {
+  if (isFullscreen) exitFullscreen();
+  else enterFullscreen();
+};
+
+function enterFullscreen() {
+  isFullscreen = true;
+  document.body.classList.add('fullscreen-active');
+  document.getElementById('fullscreenPlus').classList.remove('hidden');
+  document.getElementById('viewerBody').addEventListener('wheel', onScrollWheel, { passive: false });
+  // Re-render at higher scale
+  goToViewerPage(viewerCurrentPage);
+}
+
+function exitFullscreen() {
+  isFullscreen = false;
+  document.body.classList.remove('fullscreen-active');
+  document.getElementById('fullscreenPlus').classList.add('hidden');
+  document.getElementById('plusMenu').classList.add('hidden');
+  plusMenuOpen = false;
+  document.getElementById('viewerBody').removeEventListener('wheel', onScrollWheel);
+  goToViewerPage(viewerCurrentPage);
+}
+
+let scrollAccum = 0;
+function onScrollWheel(e) {
+  if (!isFullscreen) return;
+  e.preventDefault();
+  scrollAccum += e.deltaY;
+  const threshold = 80;
+  if (scrollAccum > threshold && viewerCurrentPage < viewerTotalPages) {
+    scrollAccum = 0;
+    viewerCurrentPage++;
+    goToViewerPage(viewerCurrentPage);
+  } else if (scrollAccum < -threshold && viewerCurrentPage > 1) {
+    scrollAccum = 0;
+    viewerCurrentPage--;
+    goToViewerPage(viewerCurrentPage);
+  }
+}
+
+/* ========== Fullscreen + Button ========== */
+window.togglePlusMenu = function() {
+  plusMenuOpen = !plusMenuOpen;
+  const menu = document.getElementById('plusMenu');
+  if (plusMenuOpen) menu.classList.remove('hidden');
+  else menu.classList.add('hidden');
+};
+
+window.addBlankPage = function() {
+  const mat = currentViewerMaterial;
+  if (!mat) return;
+  if (!mat.extraPages) mat.extraPages = {};
+
+  // Add blank page after current
+  viewerTotalPages++;
+  // Shift existing extra pages
+  const newExtra = {};
+  for (const key of Object.keys(mat.extraPages)) {
+    const k = parseInt(key);
+    if (k > viewerCurrentPage) newExtra[k + 1] = mat.extraPages[key];
+    else newExtra[k] = mat.extraPages[key];
+  }
+  newExtra[viewerCurrentPage + 1] = { type: 'blank', content: null, addedAt: Date.now() };
+  mat.extraPages = newExtra;
+  mat.pageCount = viewerTotalPages;
+  saveMaterials();
+  // Navigate to the new blank page
+  viewerCurrentPage = viewerCurrentPage + 1;
+  goToViewerPage(viewerCurrentPage);
+  showToast('Blank page added');
+  document.getElementById('plusMenu').classList.add('hidden');
+  plusMenuOpen = false;
+};
+
+window.addNoteFromFS = function() {
+  document.getElementById('plusMenu').classList.add('hidden');
+  plusMenuOpen = false;
+  toggleNotePanel();
+};
+
+/* ========== Render ========== */
+function renderAll() {
+  renderCabinet();
+  renderSidebar();
+  renderTrashView();
+  updateTrashBadge();
+  initDragEvents();
+}
+
+function renderCabinet() {
+  const area = document.getElementById('cabinetArea');
+  const emptyState = document.getElementById('emptyState');
+  area.querySelectorAll('.cabinet-card').forEach(c => c.remove());
+
+  if (materials.length === 0) { emptyState.classList.remove('hidden'); return; }
+  emptyState.classList.add('hidden');
+
+  materials.forEach(mat => {
+    const card = document.createElement('div');
+    card.className = 'cabinet-card';
+    card.dataset.materialId = mat.id;
+    card.style.left = (mat.x || 0) + 'px';
+    card.style.top = (mat.y || 0) + 'px';
+    card.innerHTML =
+      '<button class="delete-btn" onclick="event.stopPropagation();deleteCardFromCabinet(\'' + mat.id + '\')">\u00d7</button>' +
+      '<div class="card-accent"></div>' +
+      '<div class="card-icon">' + getMaterialIcon(mat.type) + '</div>' +
+      '<div class="card-name" title="' + mat.name + '">' + mat.name + '</div>' +
+      '<div class="card-meta"><span>' + new Date(mat.createdAt).toLocaleDateString('zh-CN') + '</span>' +
+      (mat.pageCount ? '<span>' + mat.pageCount + 'p</span>' : '') + '</div>' +
+      '<div class="card-type">' + getMaterialTypeLabel(mat.type) + '</div>';
+    area.appendChild(card);
+  });
+}
+
+function renderSidebar() {
+  const list = document.getElementById('sidebarList');
+  if (materials.length === 0) {
+    list.innerHTML = '<li style="padding:16px;text-align:center;opacity:0.35;font-size:11px">No Materials</li>';
+  } else {
+    const activeId = currentViewerMaterial ? currentViewerMaterial.id : null;
+    list.innerHTML = materials.map(mat =>
+      '<li class="sidebar-item ' + (mat.id === activeId ? 'active' : '') + '" onclick="openMaterial(\'' + mat.id + '\')" title="' + mat.name + '">' +
+      '<span class="item-icon">' + getMaterialIcon(mat.type) + '</span>' +
+      '<span style="overflow:hidden;text-overflow:ellipsis">' + mat.name + '</span>' +
+      (mat.notes && Object.keys(mat.notes).length > 0 ? '<span class="item-badge">' + Object.keys(mat.notes).length + '</span>' : '') +
+      '</li>'
+    ).join('');
+  }
+}
+
+function updateSidebarActive(matId) {
+  document.querySelectorAll('#sidebarList .sidebar-item').forEach(item => item.classList.remove('active'));
+  const items = document.querySelectorAll('#sidebarList .sidebar-item');
+  const idx = materials.findIndex(m => m.id === matId);
+  if (idx >= 0 && items[idx]) items[idx].classList.add('active');
+}
+
+function updateTrashBadge() {
+  const item = document.getElementById('trashSidebarItem');
+  const count = document.getElementById('trashCount');
+  if (trash.length > 0) { item.style.display = ''; count.textContent = trash.length; }
+  else { item.style.display = 'none'; }
 }
 
 /* ========== Note Panel ========== */
@@ -1359,17 +1326,16 @@ function renderNoteContent(pageNum) {
   if (noteMode === 'handwrite') {
     area.innerHTML =
       '<div class="note-colors">' +
-      '<span style="font-size:11px;margin-right:6px;opacity:0.6">Color:</span>' +
+      '<span style="font-size:10px;margin-right:5px;opacity:0.5">Color:</span>' +
       '<div class="note-color-dot ' + (noteColor === '#1a1a2e' ? 'active' : '') + '" style="background:#1a1a2e" onclick="setNoteColor(\'#1a1a2e\', this)"></div>' +
-      '<div class="note-color-dot ' + (noteColor === '#ef4444' ? 'active' : '') + '" style="background:#ef4444" onclick="setNoteColor(\'#ef4444\', this)"></div>' +
-      '<div class="note-color-dot ' + (noteColor === '#f59e0b' ? 'active' : '') + '" style="background:#f59e0b" onclick="setNoteColor(\'#f59e0b\', this)"></div>' +
-      '<div class="note-color-dot ' + (noteColor === '#10b981' ? 'active' : '') + '" style="background:#10b981" onclick="setNoteColor(\'#10b981\', this)"></div>' +
-      '<div class="note-color-dot ' + (noteColor === '#0ea5e9' ? 'active' : '') + '" style="background:#0ea5e9" onclick="setNoteColor(\'#0ea5e9\', this)"></div>' +
-      '<div class="note-color-dot ' + (noteColor === '#8b5cf6' ? 'active' : '') + '" style="background:#8b5cf6" onclick="setNoteColor(\'#8b5cf6\', this)"></div>' +
+      '<div class="note-color-dot ' + (noteColor === '#e53935' ? 'active' : '') + '" style="background:#e53935" onclick="setNoteColor(\'#e53935\', this)"></div>' +
+      '<div class="note-color-dot ' + (noteColor === '#1e88e5' ? 'active' : '') + '" style="background:#1e88e5" onclick="setNoteColor(\'#1e88e5\', this)"></div>' +
+      '<div class="note-color-dot ' + (noteColor === '#43a047' ? 'active' : '') + '" style="background:#43a047" onclick="setNoteColor(\'#43a047\', this)"></div>' +
+      '<div class="note-color-dot ' + (noteColor === '#fb8c00' ? 'active' : '') + '" style="background:#fb8c00" onclick="setNoteColor(\'#fb8c00\', this)"></div>' +
+      '<div class="note-color-dot ' + (noteColor === '#8e24aa' ? 'active' : '') + '" style="background:#8e24aa" onclick="setNoteColor(\'#8e24aa\', this)"></div>' +
       '<div class="note-color-dot ' + (noteColor === '#ec4899' ? 'active' : '') + '" style="background:#ec4899" onclick="setNoteColor(\'#ec4899\', this)"></div>' +
-      '<span style="font-size:11px;margin-left:10px;opacity:0.6">W:</span>' +
-      '<input type="range" min="1" max="20" value="' + noteLineWidth + '" style="width:60px;accent-color:var(--accent)" oninput="noteLineWidth=parseInt(this.value)">' +
-      '<span style="font-size:10px;opacity:0.6">' + noteLineWidth + 'px</span>' +
+      '<span style="font-size:10px;margin-left:8px;opacity:0.5">W:</span>' +
+      '<input type="range" min="1" max="20" value="' + noteLineWidth + '" style="width:55px;accent-color:var(--accent)" oninput="noteLineWidth=parseInt(this.value)">' +
       '</div>' +
       '<div class="note-canvas-wrap" id="noteCanvasWrap"><canvas id="noteCanvas"></canvas></div>' +
       '<div class="note-tools">' +
@@ -1385,13 +1351,13 @@ function renderNoteContent(pageNum) {
     const pageNotes = (mat.notes && mat.notes[String(pageNum)]) ? mat.notes[String(pageNum)] : [];
     const imported = pageNotes.find(n => n.type === 'imported');
     area.innerHTML =
-      '<div class="note-file-import" style="flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:40px">' +
-      '<div style="font-size:48px;opacity:0.3">\u21e7</div>' +
-      '<p style="color:var(--text-secondary);font-size:13px">Import PDF or PNG as note</p>' +
-      '<button class="note-mode-btn" onclick="document.getElementById(\'noteFileInput\').click()" style="padding:10px 24px;font-size:14px">Select File</button>' +
+      '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px">' +
+      '<div style="font-size:44px;opacity:0.25">\u21e7</div>' +
+      '<p style="color:var(--text-secondary);font-size:12px">Import PDF or PNG as note</p>' +
+      '<button class="note-mode-btn" onclick="document.getElementById(\'noteFileInput\').click()" style="padding:9px 20px;font-size:13px">Select File</button>' +
       '<input type="file" id="noteFileInput" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="handleNoteFileImport(event)">' +
-      '<div id="noteImportPreview" style="max-width:100%;max-height:300px;overflow:hidden;margin-top:8px;">' +
-      (imported ? (imported.fileType === 'pdf' ? '<p>PDF note imported</p>' : '<img src="' + imported.data + '" style="max-width:100%;max-height:250px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">') : '') +
+      '<div id="noteImportPreview" style="max-width:100%;max-height:260px;overflow:hidden;">' +
+      (imported ? (imported.fileType === 'pdf' ? '<p style="font-size:11px">PDF note imported</p>' : '<img src="' + imported.data + '" style="max-width:100%;max-height:240px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">') : '') +
       '</div></div>';
   }
 }
@@ -1402,43 +1368,39 @@ function initNoteCanvas(pageNum) {
   if (!canvas || !wrap) return;
   noteCanvas = canvas;
   const rect = wrap.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+  canvas.width = rect.width; canvas.height = rect.height;
   noteCtx = canvas.getContext('2d');
+  noteStrokes = [];
 
   if (savedNoteImages[pageNum]) {
     const img = new Image();
     img.onload = () => noteCtx.drawImage(img, 0, 0);
     img.src = savedNoteImages[pageNum];
-  }
-
-  const mat = currentViewerMaterial;
-  if (mat && mat.notes) {
-    const pageNotes = mat.notes[String(pageNum)] || [];
-    const handwriteNote = pageNotes.find(n => n.type === 'handwriting');
-    if (handwriteNote && handwriteNote.strokes && !savedNoteImages[pageNum]) {
-      noteStrokes = handwriteNote.strokes;
-      redrawAllStrokes();
+  } else {
+    const mat = currentViewerMaterial;
+    if (mat && mat.notes) {
+      const pageNotes = mat.notes[String(pageNum)] || [];
+      const hw = pageNotes.find(n => n.type === 'handwriting');
+      if (hw && hw.strokes) { noteStrokes = hw.strokes; redrawNoteStrokes(); }
     }
   }
 
-  canvas.onmousedown = (e) => startDrawing(e);
-  canvas.onmousemove = (e) => draw(e);
-  canvas.onmouseup = () => stopDrawing();
-  canvas.onmouseleave = () => stopDrawing();
-  canvas.ontouchstart = (e) => { e.preventDefault(); startDrawing(e.touches[0]); };
-  canvas.ontouchmove = (e) => { e.preventDefault(); draw(e.touches[0]); };
-  canvas.ontouchend = () => stopDrawing();
+  canvas.onmousedown = (e) => noteStart(e);
+  canvas.onmousemove = (e) => noteMove(e);
+  canvas.onmouseup = () => noteEnd();
+  canvas.onmouseleave = () => noteEnd();
+  canvas.ontouchstart = (e) => { e.preventDefault(); noteStart(e.touches[0]); };
+  canvas.ontouchmove = (e) => { e.preventDefault(); noteMove(e.touches[0]); };
+  canvas.ontouchend = () => noteEnd();
 }
 
-function redrawAllStrokes() {
+function redrawNoteStrokes() {
   if (!noteCtx) return;
   noteCtx.clearRect(0, 0, noteCanvas.width, noteCanvas.height);
   for (const stroke of noteStrokes) {
     if (stroke.length < 2) continue;
     noteCtx.beginPath();
-    noteCtx.strokeStyle = stroke[0].color;
-    noteCtx.lineWidth = stroke[0].lineWidth;
+    noteCtx.strokeStyle = stroke[0].color; noteCtx.lineWidth = stroke[0].lineWidth;
     noteCtx.lineCap = 'round'; noteCtx.lineJoin = 'round';
     noteCtx.globalCompositeOperation = stroke[0].tool === 'eraser' ? 'destination-out' : 'source-over';
     noteCtx.moveTo(stroke[0].x, stroke[0].y);
@@ -1448,53 +1410,51 @@ function redrawAllStrokes() {
   noteCtx.globalCompositeOperation = 'source-over';
 }
 
-function startDrawing(e) {
+function noteStart(e) {
   isDrawing = true;
   const rect = noteCanvas.getBoundingClientRect();
-  const scaleX = noteCanvas.width / rect.width;
-  const scaleY = noteCanvas.height / rect.height;
-  const point = { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY, color: noteTool === 'eraser' ? 'rgba(0,0,0,1)' : noteColor, lineWidth: noteTool === 'marker' ? noteLineWidth * 2.5 : noteLineWidth, tool: noteTool };
-  currentStroke = [point];
+  const sx = noteCanvas.width / rect.width;
+  const sy = noteCanvas.height / rect.height;
+  currentStroke = [{ x:(e.clientX-rect.left)*sx, y:(e.clientY-rect.top)*sy, color:noteTool==='eraser'?'rgba(0,0,0,1)':noteColor, lineWidth:noteTool==='marker'?noteLineWidth*2.5:noteLineWidth, tool:noteTool }];
 }
 
-function draw(e) {
+function noteMove(e) {
   if (!isDrawing || !noteCtx) return;
   const rect = noteCanvas.getBoundingClientRect();
-  const scaleX = noteCanvas.width / rect.width;
-  const scaleY = noteCanvas.height / rect.height;
-  const point = { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY, color: noteTool === 'eraser' ? 'rgba(0,0,0,1)' : noteColor, lineWidth: noteTool === 'marker' ? noteLineWidth * 2.5 : noteLineWidth, tool: noteTool };
-  currentStroke.push(point);
-  const prev = currentStroke[currentStroke.length - 2];
-  noteCtx.beginPath();
-  noteCtx.strokeStyle = point.color; noteCtx.lineWidth = point.lineWidth;
+  const sx = noteCanvas.width / rect.width;
+  const sy = noteCanvas.height / rect.height;
+  const pt = { x:(e.clientX-rect.left)*sx, y:(e.clientY-rect.top)*sy, color:noteTool==='eraser'?'rgba(0,0,0,1)':noteColor, lineWidth:noteTool==='marker'?noteLineWidth*2.5:noteLineWidth, tool:noteTool };
+  currentStroke.push(pt);
+  const prev = currentStroke[currentStroke.length-2];
+  noteCtx.beginPath(); noteCtx.strokeStyle = pt.color; noteCtx.lineWidth = pt.lineWidth;
   noteCtx.lineCap = 'round'; noteCtx.lineJoin = 'round';
-  noteCtx.globalCompositeOperation = noteTool === 'eraser' ? 'destination-out' : 'source-over';
-  noteCtx.moveTo(prev.x, prev.y); noteCtx.lineTo(point.x, point.y);
-  noteCtx.stroke();
-  noteCtx.globalCompositeOperation = 'source-over';
+  noteCtx.globalCompositeOperation = noteTool==='eraser'?'destination-out':'source-over';
+  noteCtx.moveTo(prev.x, prev.y); noteCtx.lineTo(pt.x, pt.y);
+  noteCtx.stroke(); noteCtx.globalCompositeOperation = 'source-over';
 }
 
-function stopDrawing() {
+function noteEnd() {
   if (!isDrawing) return; isDrawing = false;
   if (currentStroke.length > 0) noteStrokes.push(currentStroke);
   currentStroke = [];
   if (noteCanvas) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
 }
 
-window.setNoteColor = function(color, el) { noteColor = color; document.querySelectorAll('.note-color-dot').forEach(d => d.classList.remove('active')); if (el) el.classList.add('active'); };
-window.setNoteTool = function(tool, el) { noteTool = tool; document.querySelectorAll('.note-tool-btn').forEach(b => b.classList.remove('active')); if (el) el.classList.add('active'); };
-window.clearNoteCanvas = function() { if (!noteCtx || !noteCanvas) return; noteCtx.clearRect(0, 0, noteCanvas.width, noteCanvas.height); noteStrokes = []; delete savedNoteImages[currentNotePage]; };
+window.setNoteColor = function(c, el) { noteColor = c; document.querySelectorAll('.note-color-dot').forEach(d => d.classList.remove('active')); if (el) el.classList.add('active'); };
+window.setNoteTool = function(t, el) { noteTool = t; document.querySelectorAll('.note-tool-btn').forEach(b => b.classList.remove('active')); if (el) el.classList.add('active'); };
+window.clearNoteCanvas = function() { if (!noteCtx||!noteCanvas) return; noteCtx.clearRect(0,0,noteCanvas.width,noteCanvas.height); noteStrokes=[]; delete savedNoteImages[currentNotePage]; };
+
 window.saveNoteToMaterial = function() {
   const mat = currentViewerMaterial; if (!mat) return;
   if (!mat.notes) mat.notes = {};
-  const pageKey = String(currentNotePage);
-  let pageNotes = mat.notes[pageKey] || [];
+  const key = String(currentNotePage);
+  let pageNotes = mat.notes[key] || [];
   if (noteMode === 'handwrite') {
     pageNotes = pageNotes.filter(n => n.type !== 'handwriting');
-    if (noteStrokes.length > 0) pageNotes.push({ type: 'handwriting', strokes: JSON.parse(JSON.stringify(noteStrokes)) });
+    if (noteStrokes.length > 0) pageNotes.push({ type:'handwriting', strokes:JSON.parse(JSON.stringify(noteStrokes)) });
   }
-  mat.notes[pageKey] = pageNotes;
-  saveMaterials(); showToast('Note saved');
+  mat.notes[key] = pageNotes;
+  saveMaterials(); showToast('Note saved for page ' + currentNotePage);
 };
 
 window.handleNoteFileImport = function(event) {
@@ -1503,40 +1463,28 @@ window.handleNoteFileImport = function(event) {
   reader.onload = function(e) {
     const mat = currentViewerMaterial; if (!mat) return;
     if (!mat.notes) mat.notes = {};
-    const pageKey = String(currentNotePage);
-    let pageNotes = mat.notes[pageKey] || [];
+    const key = String(currentNotePage);
+    let pageNotes = mat.notes[key] || [];
     pageNotes = pageNotes.filter(n => n.type !== 'imported');
-    pageNotes.push({ type: 'imported', data: e.target.result, fileType: file.name.endsWith('.pdf') ? 'pdf' : 'png' });
-    mat.notes[pageKey] = pageNotes;
-    saveMaterials(); renderNoteContent(currentNotePage); showToast('File imported');
+    pageNotes.push({ type:'imported', data:e.target.result, fileType:file.name.endsWith('.pdf')?'pdf':'png' });
+    mat.notes[key] = pageNotes;
+    saveMaterials(); renderNoteContent(currentNotePage);
+    showToast('File imported as note');
   };
   reader.readAsDataURL(file); event.target.value = '';
 };
-
-/* ========== Delete from Viewer ========== */
-window.deleteMaterial = function() {
-  if (!currentViewerMaterial) return;
-  const mat = currentViewerMaterial;
-  trash.push({ ...mat, deletedAt: Date.now() });
-  materials = materials.filter(m => m.id !== mat.id);
-  saveMaterials(); saveTrash();
-  closeViewer(); renderAll();
-  showToast('Moved to trash: ' + mat.name);
-};
-
-/* ========== Confirm ========== */
-window.closeConfirm = function() { document.getElementById('confirmOverlay').classList.add('hidden'); pendingAction = null; };
 
 /* ========== Settings ========== */
 window.toggleSettings = function() { document.getElementById('settingsOverlay').classList.toggle('hidden'); };
 
 window.updateFontSize = function(val) {
   document.documentElement.style.setProperty('--font-size-base', val + 'px');
-  document.documentElement.style.setProperty('--font-size-sm', (parseInt(val) - 2) + 'px');
-  document.documentElement.style.setProperty('--font-size-lg', (parseInt(val) + 2) + 'px');
-  document.documentElement.style.setProperty('--font-size-xl', (parseInt(val) + 6) + 'px');
+  document.documentElement.style.setProperty('--font-size-sm', (parseInt(val)-2) + 'px');
+  document.documentElement.style.setProperty('--font-size-lg', (parseInt(val)+2) + 'px');
+  document.documentElement.style.setProperty('--font-size-xl', (parseInt(val)+6) + 'px');
+  document.documentElement.style.setProperty('--font-size-xxl', (parseInt(val)+12) + 'px');
   document.getElementById('fontSizeLabel').textContent = val + 'px';
-  saveSettings({ fontSize: val, theme: document.body.getAttribute('data-theme'), mode: document.body.getAttribute('data-mode') });
+  saveSettings({ fontSize:val, theme:document.body.getAttribute('data-theme'), mode:document.body.getAttribute('data-mode') });
 };
 
 window.setTheme = function(theme) {
@@ -1544,44 +1492,35 @@ window.setTheme = function(theme) {
   document.querySelectorAll('.theme-pick').forEach(o => o.classList.remove('active'));
   const el = document.querySelector('.theme-pick[data-theme="' + theme + '"]');
   if (el) el.classList.add('active');
-  saveSettings({
-    fontSize: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size-base')),
-    theme: theme, mode: document.body.getAttribute('data-mode')
-  });
+  saveSettings({ fontSize:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size-base')), theme:theme, mode:document.body.getAttribute('data-mode') });
 };
 
 window.toggleMode = function() {
-  const current = document.body.getAttribute('data-mode');
-  const newMode = current === 'dark' ? 'light' : 'dark';
-  document.body.setAttribute('data-mode', newMode);
-  const toggle = document.getElementById('modeToggle');
-  const label = toggle.querySelector('.toggle-label');
-  if (newMode === 'dark') { toggle.classList.add('active'); label.textContent = '\u591c\u95f4\u6a21\u5f0f'; }
-  else { toggle.classList.remove('active'); label.textContent = '\u65e5\u95f4\u6a21\u5f0f'; }
-  saveSettings({
-    fontSize: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size-base')),
-    theme: document.body.getAttribute('data-theme'), mode: newMode
-  });
+  const cur = document.body.getAttribute('data-mode');
+  const nm = cur === 'dark' ? 'light' : 'dark';
+  document.body.setAttribute('data-mode', nm);
+  const t = document.getElementById('modeToggle');
+  const l = t.querySelector('.toggle-label');
+  if (nm === 'dark') { t.classList.add('active'); l.textContent = '\u591c\u95f4\u6a21\u5f0f'; }
+  else { t.classList.remove('active'); l.textContent = '\u65e5\u95f4\u6a21\u5f0f'; }
+  saveSettings({ fontSize:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size-base')), theme:document.body.getAttribute('data-theme'), mode:nm });
 };
 
 /* ========== Init ========== */
 function init() {
-  loadMaterials();
-  loadTrash();
-  renderAll();
+  loadMaterials(); loadTrash(); renderAll();
 
   const settings = loadSettings();
   if (settings.theme) {
     document.body.setAttribute('data-theme', settings.theme);
     document.querySelectorAll('.theme-pick').forEach(o => o.classList.remove('active'));
-    const activeEl = document.querySelector('.theme-pick[data-theme="' + settings.theme + '"]');
-    if (activeEl) activeEl.classList.add('active');
+    const ae = document.querySelector('.theme-pick[data-theme="' + settings.theme + '"]');
+    if (ae) ae.classList.add('active');
   }
   if (settings.mode === 'dark') {
     document.body.setAttribute('data-mode', 'dark');
-    const toggle = document.getElementById('modeToggle');
-    toggle.classList.add('active');
-    toggle.querySelector('.toggle-label').textContent = '\u591c\u95f4\u6a21\u5f0f';
+    const t = document.getElementById('modeToggle');
+    t.classList.add('active'); t.querySelector('.toggle-label').textContent = '\u591c\u95f4\u6a21\u5f0f';
   }
   if (settings.fontSize) {
     document.getElementById('fontSizeSlider').value = settings.fontSize;
@@ -1600,12 +1539,21 @@ function init() {
     }
     if (e.key === 'ArrowLeft' && !e.target.closest('input')) viewerPrevPage();
     if (e.key === 'ArrowRight' && !e.target.closest('input')) viewerNextPage();
+    if (e.key === 'f' && e.ctrlKey) { e.preventDefault(); toggleFullscreen(); }
   });
 
-  console.log('Rhein Lab v2 initialized, materials:', materials.length, 'trash:', trash.length);
+  // Close plus menu on outside click
+  document.addEventListener('click', function(e) {
+    if (plusMenuOpen && !e.target.closest('#plusMenu') && !e.target.closest('#fullscreenPlus')) {
+      document.getElementById('plusMenu').classList.add('hidden');
+      plusMenuOpen = false;
+    }
+  });
+
+  console.log('Rhein Lab v3 ready. Materials:', materials.length, 'Trash:', trash.length);
 }
 
-/* Expose all globals */
+/* Expose */
 window.openMaterial = openMaterial;
 window.viewerPrevPage = viewerPrevPage;
 window.viewerNextPage = viewerNextPage;
@@ -1626,12 +1574,20 @@ window.setTheme = setTheme;
 window.toggleMode = toggleMode;
 window.deleteMaterial = deleteMaterial;
 window.closeConfirm = closeConfirm;
-window.createEmptyMaterial = createEmptyMaterial;
 window.handleFileImport = handleFileImport;
 window.openTrash = openTrash;
 window.closeTrash = closeTrash;
 window.restoreFromTrash = restoreFromTrash;
 window.permanentDelete = permanentDelete;
+window.deleteCardFromCabinet = deleteCardFromCabinet;
+window.toggleFullscreen = toggleFullscreen;
+window.togglePlusMenu = togglePlusMenu;
+window.addBlankPage = addBlankPage;
+window.addNoteFromFS = addNoteFromFS;
+window.togglePenTool = togglePenTool;
+window.toggleEraser = toggleEraser;
+window.setPenColor = setPenColor;
+window.undoPenStroke = undoPenStroke;
 
 init();
 </script>
