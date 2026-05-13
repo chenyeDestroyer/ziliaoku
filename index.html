@@ -136,17 +136,18 @@ body {
 .action-card:hover .action-icon { background:var(--accent); color:#fff; }
 
 /* ====== Cabinet / Drag Grid ====== */
-.cabinet-area { position:relative; min-height:460px; height:calc(100vh - 210px); border-top:1px solid var(--border-light); padding-top:20px; margin-top:8px; }
-.cabinet-area::before { content:""; position:absolute; top:-1px; left:20px; right:20px; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0.3; } }
+.cabinet-area { position:relative; min-height:460px; height:calc(100vh - 210px); border-top:1px solid var(--border-light); padding:24px 10px 10px; margin-top:8px; background:linear-gradient(180deg, rgba(0,0,0,0.01) 0%, transparent 20%); }
+.cabinet-area::before { content:""; position:absolute; top:0; left:20px; right:20px; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0.25; } }
 
 .cabinet-card {
-  position:absolute; width:175px;
-  background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg);
-  padding:14px; cursor:grab; user-select:none;
-  transition:box-shadow 0.2s,border-color 0.2s;
+  position:absolute; width:128px;
+  background:var(--bg-card); border:1px solid var(--border); border-radius:6px;
+  padding:10px 8px 8px; cursor:grab; user-select:none;
+  transition:box-shadow 0.2s,border-color 0.2s,transform 0.1s;
   overflow:visible; display:flex; flex-direction:column; box-shadow:var(--shadow);
   z-index:1;
 }
+.cabinet-card::before { content:""; position:absolute; top:0; left:8px; right:8px; height:1px; background:var(--border-light); }
 .cabinet-card:hover { box-shadow:var(--shadow-lg); border-color:var(--accent); z-index:5; }
 .cabinet-card.dragging { cursor:grabbing; z-index:100 !important; box-shadow:0 16px 48px rgba(0,0,0,0.2) !important; opacity:0.94; transform:scale(1.05); border-color:var(--accent); transition:none; }
 .cabinet-card.long-pressing { box-shadow:0 0 0 3px var(--accent-glow); border-color:var(--accent); }
@@ -179,7 +180,7 @@ body {
 
 .cabinet-card .card-accent { position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--accent-dark)); opacity:0; transition:opacity var(--transition); }
 .cabinet-card:hover .card-accent { opacity:1; }
-.cabinet-card .card-icon { font-size:26px; margin-bottom:6px; opacity:0.8; }
+.cabinet-card .card-icon { font-size:20px; margin-bottom:4px; opacity:0.7; }
 .cabinet-card .card-name { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
 .cabinet-card .card-meta { font-size:10px; color:var(--text-secondary); display:flex; align-items:center; gap:5px; }
 .cabinet-card .card-type { display:inline-block; padding:1px 7px; background:var(--accent-light); color:var(--accent); border-radius:3px; font-size:9px; font-weight:500; margin-top:auto; width:fit-content; }
@@ -707,9 +708,9 @@ function getMaterialTypeLabel(type) { const m = { empty:'Blank', pdf:'PDF', docx
 function findFreePosition() {
   const area = document.getElementById('cabinetArea');
   const w = area ? area.clientWidth : 800;
-  const cols = Math.max(1, Math.floor((w - 20) / 195));
+  const cols = Math.max(1, Math.floor((w - 20) / 144));
   const idx = materials.length;
-  return { x: 10 + (idx % cols) * 195, y: 10 + Math.floor(idx / cols) * 175 };
+  return { x: 10 + (idx % cols) * 144, y: 10 + Math.floor(idx / cols) * 130 };
 }
 
 /* ========== Sidebar Auto-Hide ========== */
@@ -829,7 +830,7 @@ function onDragStart(e) {
   dragState.longPressTimer = setTimeout(() => {
     dragState.longPressTriggered = true;
     startDragging(cx, cy);
-  }, 450);
+  }, 280);
 
   card.classList.add('long-pressing');
   document.addEventListener('mousemove', onDragMove);
