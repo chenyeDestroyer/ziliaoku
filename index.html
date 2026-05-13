@@ -178,7 +178,9 @@ body {
 .viewer-body { flex:1; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--bg-main); padding:16px; position:relative; transition:background 0.3s; }
 
 /* Page container with pen canvas overlay */
-.page-wrapper { position:relative; display:inline-block; box-shadow:var(--shadow-lg); border-radius:2px; }
+.page-wrapper { position:relative; display:inline-block; box-shadow:var(--shadow-lg); border-radius:2px; transition: transform 0.05s ease-out; }
+.page-wrapper.pannable { cursor: grab; }
+.page-wrapper.panning { cursor: grabbing; transition: none; }
 .page-wrapper .page-canvas { display:block; border-radius:2px; }
 .page-wrapper .pen-canvas { position:absolute; top:0; left:0; cursor:crosshair; border-radius:2px; }
 
@@ -209,34 +211,35 @@ body.fullscreen-active .viewer-footer button:hover { color:#fff; border-color:#f
 body.fullscreen-active .viewer-footer button.active-tool { background:var(--accent); color:#fff; border-color:var(--accent); }
 body.fullscreen-active .viewer-footer .page-input { color:#fff; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); }
 body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
+body.fullscreen-active .viewer-header button[onclick*="deleteMaterial"] { display:none; }
 body.fullscreen-active .note-panel { z-index:30; top:52px; bottom:44px; height:auto; }
 body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 
 /* Fullscreen + button */
-.fullscreen-plus {
-  position:absolute; right:20px; top:50%; transform:translateY(-50%);
-  width:40px; height:40px; border-radius:50%;
-  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
-  color:#fff; font-size:20px; cursor:pointer; z-index:25;
-  display:flex; align-items:center; justify-content:center;
-  transition:all var(--transition);
+/* Right-side auto-hide panel in fullscreen */
+.fs-right-trigger {
+  position:absolute; right:0; top:0; bottom:0; width:16px; z-index:28; cursor:default;
+  background:linear-gradient(270deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 50%,transparent 100%);
+  transition:background 0.3s;
 }
-.fullscreen-plus:hover { background:rgba(255,255,255,0.2); border-color:#fff; }
+.fs-right-trigger:hover { background:linear-gradient(270deg,rgba(255,255,255,0.15) 0%,rgba(255,255,255,0.05) 60%,transparent 100%); }
 
-.fullscreen-plus-menu {
-  position:absolute; right:48px; top:50%; transform:translateY(-50%);
-  background:rgba(30,30,40,0.95); border:1px solid rgba(255,255,255,0.15);
-  border-radius:var(--radius); padding:6px; z-index:26;
-  display:flex; flex-direction:column; gap:2px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.5);
-  animation:fadeIn 0.15s ease;
+.fs-right-panel {
+  position:absolute; right:0; top:52px; bottom:44px; width:220px; z-index:29;
+  background:rgba(20,20,30,0.94); border-left:1px solid rgba(255,255,255,0.1);
+  transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  display:flex; flex-direction:column; padding:12px; gap:6px;
+  backdrop-filter:blur(8px);
 }
-.fullscreen-plus-menu button {
-  padding:8px 16px; border:none; background:none; color:#ddd;
-  cursor:pointer; font-size:13px; text-align:left; white-space:nowrap;
-  border-radius:4px; transition:background 0.15s;
+.fs-right-panel.open { transform:translateX(0); }
+.fs-right-panel button {
+  padding:10px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:var(--radius);
+  background:rgba(255,255,255,0.04); color:#ccc; cursor:pointer; font-size:13px;
+  text-align:left; transition:all var(--transition);
 }
-.fullscreen-plus-menu button:hover { background:rgba(255,255,255,0.1); color:#fff; }
+.fs-right-panel button:hover { background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.25); }
+.fs-right-panel button.danger { color:#e57373; border-color:rgba(229,115,115,0.2); }
+.fs-right-panel button.danger:hover { background:rgba(229,57,53,0.15); border-color:rgba(229,57,53,0.4); }
 
 /* ====== Note Panel ====== */
 .note-panel { position:absolute; top:0; right:0; width:370px; height:100%; background:var(--bg-card); border-left:1px solid var(--border); z-index:10; display:flex; flex-direction:column; animation:slideIn 0.25s ease; box-shadow:-4px 0 20px rgba(0,0,0,0.1); }
@@ -405,11 +408,12 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
     <div class="viewer-body" id="viewerBody">
       <div id="viewerContent" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:relative;"></div>
       <div class="note-panel hidden" id="notePanel"></div>
-      <!-- Fullscreen + button -->
-      <div class="fullscreen-plus hidden" id="fullscreenPlus" onclick="togglePlusMenu()">+</div>
-      <div class="fullscreen-plus-menu hidden" id="plusMenu">
-        <button onclick="addBlankPage()">□ 添加空白页</button>
-        <button onclick="addNoteFromFS()">✎ 添加笔记</button>
+      <!-- Right-side auto-hide panel -->
+      <div class="fs-right-trigger hidden" id="fsRightTrigger"></div>
+      <div class="fs-right-panel" id="fsRightPanel">
+        <button onclick="addNoteFromFS()">✎ Notes</button>
+        <button onclick="addBlankPage()">□ Add Blank Page</button>
+        <button class="danger" onclick="deleteCurrentPage()">✖ Delete This Page</button>
       </div>
     </div>
     <div class="viewer-footer" id="viewerFooter">
@@ -505,6 +509,7 @@ let viewerCurrentPage = 1;
 let viewerTotalPages = 0;
 let viewerRotation = 0;
 let viewerZoom = 1.0;
+let panX = 0, panY = 0, isPanning = false, panStartX = 0, panStartY = 0;
 let penToolActive = false;
 let eraserActive = false;
 let penColor = '#1a1a2e';
@@ -524,7 +529,6 @@ let savedNoteImages = {};
 let trashViewOpen = false;
 let sidebarOpen = false;
 let isFullscreen = false;
-let plusMenuOpen = false;
 
 // Per-page pen state
 let penCanvas = null;
@@ -589,6 +593,34 @@ document.addEventListener('mousemove', function(e) {
   if (sidebarOpen && e.clientX > 280) {
     if (!sidebar.matches(':hover')) hideSidebar();
   }
+});
+
+// Right-side panel auto-show in fullscreen
+const fsRightTrigger = document.getElementById('fsRightTrigger');
+const fsRightPanel = document.getElementById('fsRightPanel');
+let fsRightOpen = false;
+
+fsRightTrigger.addEventListener('mouseenter', function() {
+  fsRightOpen = true; fsRightPanel.classList.add('open');
+});
+fsRightPanel.addEventListener('mouseenter', function() {
+  fsRightOpen = true; fsRightPanel.classList.add('open');
+});
+fsRightPanel.addEventListener('mouseleave', function() {
+  setTimeout(() => {
+    if (!fsRightPanel.matches(':hover') && !fsRightTrigger.matches(':hover')) {
+      fsRightOpen = false; fsRightPanel.classList.remove('open');
+    }
+  }, 200);
+});
+fsRightTrigger.addEventListener('mouseleave', function(e) {
+  const r = fsRightPanel.getBoundingClientRect();
+  if (e.clientX <= r.right && e.clientX >= r.left) return;
+  setTimeout(() => {
+    if (!fsRightPanel.matches(':hover') && !fsRightTrigger.matches(':hover')) {
+      fsRightOpen = false; fsRightPanel.classList.remove('open');
+    }
+  }, 200);
 });
 
 /* ========== Material Import ========== */
@@ -819,6 +851,8 @@ window.openMaterial = function(matId) {
   document.getElementById('viewerTitle').textContent = mat.name;
   updateZoomLabel();
   document.getElementById('viewerOverlay').classList.remove('hidden');
+  // Clear global per-page state for new material
+  pageSnapshots = {}; penStrokes = []; savedNoteImages = {}; panX = 0; panY = 0;
   document.getElementById('notePanel').classList.add('hidden');
   document.getElementById('notePanel').innerHTML = '';
   document.getElementById('penToolbar').style.display = 'none';
@@ -927,6 +961,12 @@ async function renderCurrentPage() {
       await page.render({ canvasContext: pc.getContext('2d'), viewport }).promise;
     }
     initPenCanvas(viewerCurrentPage);
+    // Add pan support when not in pen mode
+    const pw = container.querySelector('.page-wrapper');
+    if (pw && isFullscreen) {
+      pw.classList.add('pannable');
+      pw.addEventListener('mousedown', startPan);
+    }
     } catch(e) { console.error('PDF page render error:', e); container.innerHTML = '<p>Error rendering page ' + viewerCurrentPage + ': ' + e.message + '</p>'; }
   } else if ((mat.type === 'png' || mat.type === 'jpeg') && viewerCurrentPage === 1) {
     container.innerHTML =
@@ -1249,8 +1289,10 @@ window.viewerGoToPage = function() {
 
 function goToViewerPage(pageNum) {
   // Save annotations for current page first
-  if (penCanvas) pageSnapshots[viewerCurrentPage] = penCanvas.toDataURL();
+  if (penCanvas) { pageSnapshots[viewerCurrentPage] = penCanvas.toDataURL(); }
   savePageAnnotations();
+  // Clear in-memory strokes for next page
+  penStrokes = [];
 
   viewerCurrentPage = pageNum;
   currentNotePage = pageNum;
@@ -1315,10 +1357,39 @@ window.zoomOut = function() {
 };
 
 window.zoomReset = function() {
-  viewerZoom = 1.0;
+  viewerZoom = 1.0; panX = 0; panY = 0;
   updateZoomLabel();
   goToViewerPage(viewerCurrentPage);
 };
+
+/* ========== Pan ========== */
+function startPan(e) {
+  if (penToolActive) return;
+  if (e.target.closest('.pen-canvas')) return;
+  isPanning = true;
+  panStartX = e.clientX - panX;
+  panStartY = e.clientY - panY;
+  const pw = document.querySelector('.page-wrapper');
+  if (pw) pw.classList.add('panning');
+  document.addEventListener('mousemove', doPan);
+  document.addEventListener('mouseup', stopPan);
+}
+
+function doPan(e) {
+  if (!isPanning) return;
+  panX = e.clientX - panStartX;
+  panY = e.clientY - panStartY;
+  const pw = document.querySelector('.page-wrapper');
+  if (pw) pw.style.transform = 'translate(' + panX + 'px, ' + panY + 'px)';
+}
+
+function stopPan() {
+  isPanning = false;
+  const pw = document.querySelector('.page-wrapper');
+  if (pw) pw.classList.remove('panning');
+  document.removeEventListener('mousemove', doPan);
+  document.removeEventListener('mouseup', stopPan);
+}
 
 // Ctrl+scroll zoom in fullscreen
 document.addEventListener('wheel', function(e) {
@@ -1339,19 +1410,19 @@ window.toggleFullscreen = function() {
 function enterFullscreen() {
   isFullscreen = true;
   document.body.classList.add('fullscreen-active');
-  document.getElementById('fullscreenPlus').classList.remove('hidden');
+  document.getElementById('fsRightTrigger').classList.remove('hidden');
   document.getElementById('viewerBody').addEventListener('wheel', onScrollWheel, { passive: false });
-  // Re-render at higher scale
+  panX = 0; panY = 0;
   goToViewerPage(viewerCurrentPage);
 }
 
 function exitFullscreen() {
   isFullscreen = false;
   document.body.classList.remove('fullscreen-active');
-  document.getElementById('fullscreenPlus').classList.add('hidden');
-  document.getElementById('plusMenu').classList.add('hidden');
-  plusMenuOpen = false;
+  document.getElementById('fsRightTrigger').classList.add('hidden');
+  document.getElementById('fsRightPanel').classList.remove('open');
   document.getElementById('viewerBody').removeEventListener('wheel', onScrollWheel);
+  panX = 0; panY = 0;
   goToViewerPage(viewerCurrentPage);
 }
 
@@ -1374,43 +1445,105 @@ function onScrollWheel(e) {
 }
 
 /* ========== Fullscreen + Button ========== */
-window.togglePlusMenu = function() {
-  plusMenuOpen = !plusMenuOpen;
-  const menu = document.getElementById('plusMenu');
-  if (plusMenuOpen) menu.classList.remove('hidden');
-  else menu.classList.add('hidden');
-};
+
 
 window.addBlankPage = function() {
   const mat = currentViewerMaterial;
   if (!mat) return;
   if (!mat.extraPages) mat.extraPages = {};
 
-  // Add blank page after current
+  const insertAfter = viewerCurrentPage;
   viewerTotalPages++;
-  // Shift existing extra pages
+
+  // Shift existing extra pages that come after insertion point
   const newExtra = {};
-  for (const key of Object.keys(mat.extraPages)) {
-    const k = parseInt(key);
-    if (k > viewerCurrentPage) newExtra[k + 1] = mat.extraPages[key];
-    else newExtra[k] = mat.extraPages[key];
+  const keys = Object.keys(mat.extraPages).map(Number).sort((a,b) => a - b);
+  for (const k of keys) {
+    if (k > insertAfter) newExtra[k + 1] = mat.extraPages[k];
+    else newExtra[k] = mat.extraPages[k];
   }
-  newExtra[viewerCurrentPage + 1] = { type: 'blank', content: null, addedAt: Date.now() };
+  newExtra[insertAfter + 1] = { type: 'blank', content: null, addedAt: Date.now() };
   mat.extraPages = newExtra;
   mat.pageCount = viewerTotalPages;
+
+  // Also shift page annotations and notes
+  if (mat.pageAnnotations) {
+    const newAnns = {};
+    const annKeys = Object.keys(mat.pageAnnotations).map(Number).sort((a,b) => a-b);
+    for (const k of annKeys) {
+      if (k > insertAfter) newAnns[k + 1] = mat.pageAnnotations[k];
+      else newAnns[k] = mat.pageAnnotations[k];
+    }
+    mat.pageAnnotations = newAnns;
+  }
+  if (mat.notes) {
+    const newNotes = {};
+    const noteKeys = Object.keys(mat.notes).map(Number).sort((a,b) => a-b);
+    for (const k of noteKeys) {
+      if (k > insertAfter) newNotes[k + 1] = mat.notes[k];
+      else newNotes[k] = mat.notes[k];
+    }
+    mat.notes = newNotes;
+  }
+
   saveMaterials();
-  // Navigate to the new blank page
-  viewerCurrentPage = viewerCurrentPage + 1;
+  viewerCurrentPage = insertAfter + 1;
   goToViewerPage(viewerCurrentPage);
-  showToast('Blank page added');
-  document.getElementById('plusMenu').classList.add('hidden');
-  plusMenuOpen = false;
+  showToast('Blank page added after page ' + insertAfter);
 };
 
 window.addNoteFromFS = function() {
-  document.getElementById('plusMenu').classList.add('hidden');
-  plusMenuOpen = false;
   toggleNotePanel();
+};
+
+window.deleteCurrentPage = function() {
+  const mat = currentViewerMaterial;
+  if (!mat) return;
+  if (viewerTotalPages <= 1) { showToast('Cannot delete the only page'); return; }
+
+  // Check if this is an extra page
+  const pdfPgCount = viewerPdfDoc ? viewerPdfDoc.numPages : (mat.pageCount - Object.keys(mat.extraPages || {}).length);
+  const isExtra = viewerCurrentPage > pdfPgCount && mat.extraPages && mat.extraPages[viewerCurrentPage];
+  const isDocxExtra = mat.type === 'docx' && docxPageData[mat.id] && viewerCurrentPage > docxPageData[mat.id].pages.length;
+
+  if (isExtra || isDocxExtra) {
+    // Remove the extra page and shift others
+    if (mat.extraPages) {
+      const newExtra = {};
+      for (const k of Object.keys(mat.extraPages).map(Number).sort((a,b) => a-b)) {
+        if (k > viewerCurrentPage) newExtra[k - 1] = mat.extraPages[k];
+        else if (k < viewerCurrentPage) newExtra[k] = mat.extraPages[k];
+      }
+      mat.extraPages = newExtra;
+    }
+
+    // Shift annotations and notes
+    if (mat.pageAnnotations) {
+      const newAnns = {};
+      for (const k of Object.keys(mat.pageAnnotations).map(Number).sort((a,b) => a-b)) {
+        if (k > viewerCurrentPage) newAnns[k - 1] = mat.pageAnnotations[k];
+        else if (k < viewerCurrentPage) newAnns[k] = mat.pageAnnotations[k];
+      }
+      mat.pageAnnotations = newAnns;
+    }
+    if (mat.notes) {
+      const newNotes = {};
+      for (const k of Object.keys(mat.notes).map(Number).sort((a,b) => a-b)) {
+        if (k > viewerCurrentPage) newNotes[k - 1] = mat.notes[k];
+        else if (k < viewerCurrentPage) newNotes[k] = mat.notes[k];
+      }
+      mat.notes = newNotes;
+    }
+
+    viewerTotalPages--;
+    mat.pageCount = viewerTotalPages;
+    saveMaterials();
+    if (viewerCurrentPage > viewerTotalPages) viewerCurrentPage = viewerTotalPages;
+    goToViewerPage(viewerCurrentPage);
+    showToast('Page deleted');
+  } else {
+    showToast('Cannot delete original document pages');
+  }
 };
 
 /* ========== Render ========== */
@@ -1735,12 +1868,7 @@ function init() {
   });
 
   // Close plus menu on outside click
-  document.addEventListener('click', function(e) {
-    if (plusMenuOpen && !e.target.closest('#plusMenu') && !e.target.closest('#fullscreenPlus')) {
-      document.getElementById('plusMenu').classList.add('hidden');
-      plusMenuOpen = false;
-    }
-  });
+  
 
   console.log('Rhein Lab v3 ready. Materials:', materials.length, 'Trash:', trash.length);
 }
@@ -1773,7 +1901,6 @@ window.restoreFromTrash = restoreFromTrash;
 window.permanentDelete = permanentDelete;
 window.deleteCardFromCabinet = deleteCardFromCabinet;
 window.toggleFullscreen = toggleFullscreen;
-window.togglePlusMenu = togglePlusMenu;
 window.addBlankPage = addBlankPage;
 window.addNoteFromFS = addNoteFromFS;
 window.togglePenTool = togglePenTool;
