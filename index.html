@@ -159,6 +159,18 @@ body {
 .cabinet-card:hover .delete-btn { display:flex; }
 .cabinet-card .delete-btn:hover { transform:scale(1.2); }
 .cabinet-card.dragging .delete-btn, .cabinet-card.long-pressing .delete-btn { display:none !important; }
+.cabinet-card .bot-btn {
+  position:absolute; top:-8px; right:18px;
+  width:22px; height:22px; border-radius:50%;
+  background:var(--accent); color:#fff; border:none;
+  font-size:11px; cursor:pointer; display:none;
+  align-items:center; justify-content:center; padding:0;
+  transition:all 0.15s; z-index:2; line-height:1;
+}
+.cabinet-card .bot-btn:hover { transform:scale(1.15); background:#2b6cb0; }
+.cabinet-card:hover .bot-btn { display:flex; }
+.cabinet-card .bot-btn.has-prompt { display:flex; background:#10b981; }
+
 
 .cabinet-card .card-accent { position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--accent-dark)); opacity:0; transition:opacity var(--transition); }
 .cabinet-card:hover .card-accent { opacity:1; }
@@ -2012,6 +2024,7 @@ function renderCabinet() {
     card.style.top = (mat.y || 0) + 'px';
     card.innerHTML =
       '<button class="delete-btn" onclick="event.stopPropagation();deleteCardFromCabinet(\'' + mat.id + '\')">×</button>' +
+      '<button class="bot-btn' + (mat.botPrompt ? ' has-prompt' : '') + '" onclick="event.stopPropagation();openBotPrompt(\'' + mat.id + '\')" title="BOT提示词">🤖</button>' +
       '<div class="card-accent"></div>' +
       '<div class="card-icon">' + getMaterialIcon(mat.type) + '</div>' +
       '<div class="card-name" title="' + mat.name + '">' + mat.name + '</div>' +
@@ -2782,7 +2795,12 @@ window.sendChatMessage = async function() {
       return;
     }
     
-    let prompt = '上下文:\n' + (context || '(无)') + '\n\n用户: ' + text + '\n\n请基于上下文简洁回答，中文。';
+    // Get material-specific bot prompt
+    let botPrompt = '';
+    if (currentViewerMaterial && currentViewerMaterial.botPrompt) {
+      botPrompt = currentViewerMaterial.botPrompt;
+    }
+    let prompt = (botPrompt ? '系统要求: ' + botPrompt + '\n\n' : '') + '上下文:\n' + (context || '(无)') + '\n\n用户: ' + text + '\n\n请基于上下文简洁回答，中文。';
     let hasImage = false;
     if (chatImageData) {
       hasImage = true;
@@ -3283,6 +3301,40 @@ function loadBgSettings() {
   }
 }
 
+// BOT Prompts
+let currentBotMatId = null;
+
+window.openBotPrompt = function(matId) {
+  const mat = materials.find(m => m.id === matId);
+  if (!mat) return;
+  currentBotMatId = matId;
+  document.getElementById('botPromptMatName').textContent = mat.name;
+  document.getElementById('botPromptText').value = mat.botPrompt || '';
+  document.getElementById('botPromptOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('botPromptText').focus(), 100);
+};
+
+window.closeBotPrompt = function() {
+  document.getElementById('botPromptOverlay').classList.add('hidden');
+  currentBotMatId = null;
+};
+
+window.saveBotPrompt = function() {
+  if (!currentBotMatId) return;
+  const mat = materials.find(m => m.id === currentBotMatId);
+  if (!mat) return;
+  const prompt = document.getElementById('botPromptText').value.trim();
+  mat.botPrompt = prompt || null;
+  saveMaterials();
+  closeBotPrompt();
+  showToast(prompt ? 'BOT提示词已保存' : 'BOT提示词已清除');
+};
+
+// Close overlay on background click
+document.getElementById('botPromptOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeBotPrompt();
+});
+
 window.saveApiKey = function() {
   const input = document.getElementById('apiKeyInput');
   const status = document.getElementById('apiKeyStatus');
@@ -3409,5 +3461,23 @@ window.deleteCurrentPage = deleteCurrentPage;
 
 init();
 </script>
+<!-- BOT Prompt Editor -->
+<div id="botPromptOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:350;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--bg-card);border-radius:var(--radius-lg);width:500px;max-height:70vh;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-weight:600;font-size:var(--font-size-lg)">🤖 BOT 提示词</span>
+      <button class="close-btn" onclick="closeBotPrompt()">✕</button>
+    </div>
+    <div style="padding:8px 20px 4px;font-size:11px;color:var(--text-secondary)">
+      为 <span id="botPromptMatName" style="font-weight:600;color:var(--accent)"></span> 配置专属 AI 提示词
+    </div>
+    <textarea id="botPromptText" style="flex:1;margin:12px 20px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);color:var(--text-primary);font-size:13px;resize:vertical;min-height:180px;font-family:inherit;line-height:1.6" placeholder="输入该资料的专属提示词，AI将遵循这些要求回答..."></textarea>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closeBotPrompt()" style="padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);color:var(--text-primary);cursor:pointer;font-size:12px">取消</button>
+      <button onclick="saveBotPrompt()" style="padding:8px 20px;border:none;border-radius:var(--radius);background:var(--accent);color:#fff;cursor:pointer;font-size:12px;font-weight:600">保存</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
