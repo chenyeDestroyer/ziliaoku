@@ -449,11 +449,9 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
       <!-- Right-side auto-hide panel -->
       <div class="fs-right-trigger hidden" id="fsRightTrigger"></div>
       <div class="fs-right-panel" id="fsRightPanel">
-        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Page Actions</div>
-        <button onclick="showNewNoteDialog()">+ New Note</button>
-        <button onclick="addBlankPage()">□ Add Blank Page</button>
-        <button class="danger" onclick="deleteCurrentPage()">✖ Delete Page</button>
-        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin:10px 0 4px" id="fsPanelNotesLabel">Page Notes</div>
+        <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:4px">页面操作</div>
+        <button onclick="showNewNoteDialog()">+ 新建笔记</button>
+        <div style="font-size:11px;color:#888;letter-spacing:1px;margin:10px 0 4px" id="fsPanelNotesLabel">页面笔记</div>
         <div id="fsPanelNoteList" style="display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto"></div>
       </div>
     </div>
@@ -1313,24 +1311,23 @@ function updateViewerFooter() {
   document.getElementById('btnPrev').disabled = viewerCurrentPage <= 1;
   document.getElementById('btnNext').disabled = viewerCurrentPage >= viewerTotalPages;
 }
-window.viewerPrevPage = function() { if (viewerCurrentPage > 1) { viewerCurrentPage--; goToViewerPage(viewerCurrentPage); } };
-window.viewerNextPage = function() { if (viewerCurrentPage < viewerTotalPages) { viewerCurrentPage++; goToViewerPage(viewerCurrentPage); } };
+window.viewerPrevPage = function() { if (viewerCurrentPage > 1) goToViewerPage(viewerCurrentPage - 1); };
+window.viewerNextPage = function() { if (viewerCurrentPage < viewerTotalPages) goToViewerPage(viewerCurrentPage + 1); };
 window.viewerJumpPage = function() {
   const page = prompt('Jump to (1-' + viewerTotalPages + '):', viewerCurrentPage);
-  if (page) { const p = parseInt(page); if (p >= 1 && p <= viewerTotalPages) { viewerCurrentPage = p; goToViewerPage(p); } }
+  if (page) { const p = parseInt(page); if (p >= 1 && p <= viewerTotalPages) goToViewerPage(p); }
 };
 window.viewerGoToPage = function() {
   const p = parseInt(document.getElementById('pageInput').value);
-  if (p >= 1 && p <= viewerTotalPages) { viewerCurrentPage = p; goToViewerPage(p); }
+  if (p >= 1 && p <= viewerTotalPages) goToViewerPage(p);
 };
 
 function goToViewerPage(pageNum) {
   // Save annotations for current page first
   if (penCanvas) { pageSnapshots[viewerCurrentPage] = penCanvas.toDataURL(); }
   savePageAnnotations();
-  // Clear in-memory strokes for next page
+  // Switch to new page
   penStrokes = [];
-
   viewerCurrentPage = pageNum;
   currentNotePage = pageNum;
   if (currentViewerMaterial) { currentViewerMaterial.lastPage = pageNum; saveMaterials(); }
@@ -1467,7 +1464,6 @@ window.jumpToNote = function(matId, pageNum, noteId) {
   // Need to wait for viewer to open, then navigate
   setTimeout(() => {
     if (viewerPdfDoc || docxPageData[matId]) {
-      viewerCurrentPage = pageNum;
       goToViewerPage(pageNum);
     }
     setTimeout(() => {
@@ -1516,7 +1512,7 @@ window.zoomReset = function() {
 
 /* ========== Pan ========== */
 function startPan(e) {
-  if (penToolActive || eraserActive) return;
+  if (penToolActive || eraserActive || isDrawing) return;
   if (!isFullscreen) return;
   if (e.button !== 0) return;
   isPanning = true;
@@ -1545,15 +1541,7 @@ function stopPan() {
   document.removeEventListener('mouseup', stopPan);
 }
 
-// Ctrl+scroll zoom in fullscreen
-document.addEventListener('wheel', function(e) {
-  if (!isFullscreen || !currentViewerMaterial) return;
-  if (e.ctrlKey) {
-    e.preventDefault();
-    if (e.deltaY < 0) zoomIn();
-    else zoomOut();
-  }
-}, { passive: false });
+// Wheel zoom in fullscreen (via onScrollWheel attached to viewerBody)
 
 /* ========== Fullscreen ========== */
 window.toggleFullscreen = function() {
@@ -1582,22 +1570,11 @@ function exitFullscreen() {
   goToViewerPage(viewerCurrentPage);
 }
 
-let scrollAccum = 0;
 function onScrollWheel(e) {
   if (!isFullscreen) return;
-  if (e.ctrlKey) return; // Let zoom handler take over
   e.preventDefault();
-  scrollAccum += e.deltaY;
-  const threshold = 80;
-  if (scrollAccum > threshold && viewerCurrentPage < viewerTotalPages) {
-    scrollAccum = 0;
-    viewerCurrentPage++;
-    goToViewerPage(viewerCurrentPage);
-  } else if (scrollAccum < -threshold && viewerCurrentPage > 1) {
-    scrollAccum = 0;
-    viewerCurrentPage--;
-    goToViewerPage(viewerCurrentPage);
-  }
+  if (e.deltaY < 0) zoomIn();
+  else zoomOut();
 }
 
 /* ========== Fullscreen + Button ========== */
@@ -1643,8 +1620,7 @@ window.addBlankPage = function() {
   }
 
   saveMaterials();
-  viewerCurrentPage = insertAfter + 1;
-  goToViewerPage(viewerCurrentPage);
+  goToViewerPage(insertAfter + 1);
   showToast('Blank page added after page ' + insertAfter);
 };
 
@@ -1994,6 +1970,7 @@ function redrawNoteStrokes() {
 }
 
 function noteStart(e) {
+  e.preventDefault(); e.stopPropagation();
   isDrawing = true;
   const rect = noteCanvas.getBoundingClientRect();
   const sx = noteCanvas.width / rect.width;
@@ -2003,6 +1980,7 @@ function noteStart(e) {
 
 function noteMove(e) {
   if (!isDrawing || !noteCtx) return;
+  e.preventDefault();
   const rect = noteCanvas.getBoundingClientRect();
   const sx = noteCanvas.width / rect.width;
   const sy = noteCanvas.height / rect.height;
