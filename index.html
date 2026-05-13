@@ -546,6 +546,14 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
         </div>
       </div>
       <div class="settings-group">
+        <label>DeepSeek API Key</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="password" id="apiKeyInput" placeholder="输入 API Key" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--bg-card);color:var(--text-primary)">
+          <button onclick="saveApiKey()" style="padding:8px 14px;border:1px solid var(--accent);border-radius:var(--radius);background:var(--accent);color:#fff;cursor:pointer;font-size:11px;white-space:nowrap">保存</button>
+        </div>
+        <span id="apiKeyStatus" style="font-size:10px;color:var(--text-secondary);margin-top:2px;display:inline-block"></span>
+      </div>
+      <div class="settings-group">
         <label>莱茵生命配色</label>
         <div class="theme-options">
           <div class="theme-pick active" style="background:linear-gradient(135deg,#4a90d9,#3b7dd8)" data-theme="rhine" onclick="setTheme('rhine')" title="莱茵蓝"></div>
@@ -2291,7 +2299,7 @@ function drawNoteFormatLines() {
 let smartSelecting = false;
 let smartSelX = 0, smartSelY = 0, smartSelW = 0, smartSelH = 0;
 let smartSelStartX = 0, smartSelStartY = 0;
-const DEEPSEEK_KEY = 'sk-c7d43383abe343a6954a295eb67562ae';
+function getDeepSeekKey() { return localStorage.getItem('deepseek_api_key') || ''; }
 
 window.startSmartSummary = function() {
   if (!currentViewerMaterial) { showToast('请先打开资料'); return; }
@@ -2458,10 +2466,12 @@ async function confirmSmartSummary() {
 }
 
 async function callDeepSeek(text) {
+  const apiKey = getDeepSeekKey();
+  if (!apiKey) throw new Error('请先在设置中配置 DeepSeek API Key');
   const prompt = '请用简洁的中文总结以下内容，提取关键要点，使用要点列表格式，控制在200字以内：\n\n' + text.substring(0, 3000);
   const resp = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + DEEPSEEK_KEY },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages: [{ role: 'user', content: prompt }],
@@ -2589,6 +2599,23 @@ window.goHome = function() {
   renderAll();
 };
 
+window.saveApiKey = function() {
+  const input = document.getElementById('apiKeyInput');
+  const status = document.getElementById('apiKeyStatus');
+  const val = input.value.trim();
+  if (val) {
+    localStorage.setItem('deepseek_api_key', val);
+    status.textContent = '已保存';
+    status.style.color = '#10b981';
+    input.type = 'password';
+  } else {
+    localStorage.removeItem('deepseek_api_key');
+    status.textContent = '已清除';
+    status.style.color = 'var(--text-secondary)';
+  }
+  setTimeout(() => { status.textContent = ''; }, 2000);
+};
+
 window.toggleMode = function() {
   const cur = document.body.getAttribute('data-mode');
   const nm = cur === 'dark' ? 'light' : 'dark';
@@ -2619,6 +2646,12 @@ function init() {
   if (settings.fontSize) {
     document.getElementById('fontSizeSlider').value = settings.fontSize;
     updateFontSize(settings.fontSize);
+  }
+  // Load saved API key
+  const savedKey = localStorage.getItem('deepseek_api_key');
+  if (savedKey) {
+    const apiInput = document.getElementById('apiKeyInput');
+    if (apiInput) apiInput.value = savedKey;
   }
 
   document.getElementById('settingsOverlay').onclick = function(e) { if (e.target === this) toggleSettings(); };
