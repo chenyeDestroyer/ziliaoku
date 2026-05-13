@@ -559,12 +559,30 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
         </div>
       </div>
       <div class="settings-group">
-        <label>DeepSeek API Key</label>
+        <label>API</label>
         <div style="display:flex;gap:6px;align-items:center">
           <input type="password" id="apiKeyInput" placeholder="输入 API Key" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--bg-card);color:var(--text-primary)">
           <button onclick="saveApiKey()" style="padding:8px 14px;border:1px solid var(--accent);border-radius:var(--radius);background:var(--accent);color:#fff;cursor:pointer;font-size:11px;white-space:nowrap">保存</button>
         </div>
         <span id="apiKeyStatus" style="font-size:10px;color:var(--text-secondary);margin-top:2px;display:inline-block"></span>
+      </div>
+      <div class="settings-group">
+        <label>首页背景</label>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+          <button onclick="document.getElementById('bgImageInput').click()" style="padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:11px;background:var(--bg-card);color:var(--text-primary)">选择图片</button>
+          <button onclick="resetBgImage()" style="padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:11px;background:var(--bg-card);color:var(--text-primary)">重置</button>
+          <input type="file" id="bgImageInput" accept="image/*" style="display:none" onchange="setBgImage(event)">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:10px;min-width:36px">模糊</span>
+          <input type="range" min="0" max="20" value="0" id="bgBlurSlider" oninput="updateBgBlur()" style="flex:1">
+          <span id="bgBlurLabel" style="font-size:10px;min-width:20px">0</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;min-width:36px">透明度</span>
+          <input type="range" min="10" max="100" value="30" id="bgOpacitySlider" oninput="updateBgOpacity()" style="flex:1">
+          <span id="bgOpacityLabel" style="font-size:10px;min-width:28px">30%</span>
+        </div>
       </div>
       <div class="settings-group">
         <label>莱茵生命配色</label>
@@ -632,7 +650,7 @@ let noteStrokes = [];
 let currentStroke = [];
 let noteColor = '#1a1a2e';
 let noteLineWidth = 2;
-let noteTool = 'pen';
+let noteTool = 'none';
 let noteCanvas = null;
 let noteCtx = null;
 let noteImages = []; // Overlay images on note canvas
@@ -2220,6 +2238,7 @@ function renderNoteContent(pageNum) {
     '</div>' +
     '<div class="note-canvas-wrap" id="noteCanvasWrap"><canvas id="noteCanvas"></canvas></div>' +
     '<div class="note-tools">' +
+    '<button class="note-tool-btn ' + (noteTool === 'none' ? 'active' : '') + '" onclick="setNoteTool(\'none\', this)">Mouse</button>' +
     '<button class="note-tool-btn ' + (noteTool === 'pen' ? 'active' : '') + '" onclick="setNoteTool(\'pen\', this)">Pen</button>' +
     '<button class="note-tool-btn ' + (noteTool === 'marker' ? 'active' : '') + '" onclick="setNoteTool(\'marker\', this)">Marker</button>' +
     '<button class="note-tool-btn ' + (noteTool === 'eraser' ? 'active' : '') + '" onclick="setNoteTool(\'eraser\', this)">Eraser</button>' +
@@ -2232,7 +2251,14 @@ function renderNoteContent(pageNum) {
     '<input type="text" id="noteChatInput" class="note-chat-input" placeholder="Ask AI about this page..." onkeydown="if(event.key===\'Enter\')sendChatMessage()">' +
     '<button class="note-chat-send" onclick="sendChatMessage()">↑</button>' +
     '</div></div>';
-  setTimeout(() => { initNoteCanvas(pageNum); initChat(); }, 50);
+  setTimeout(() => {
+    initNoteCanvas(pageNum);
+    initChat();
+    const ci = document.getElementById('noteChatInput');
+    if (ci) { ci.addEventListener('mousedown', e => e.stopPropagation()); ci.addEventListener('wheel', e => e.stopPropagation()); }
+    const cm = document.getElementById('noteChatMessages');
+    if (cm) { cm.addEventListener('mousedown', e => e.stopPropagation()); cm.addEventListener('wheel', e => e.stopPropagation()); }
+  }, 50);
 }
 
 function initNoteCanvas(pageNum) {
@@ -2245,33 +2271,57 @@ function initNoteCanvas(pageNum) {
   noteCtx = canvas.getContext('2d');
   noteStrokes = [];
 
-  if (savedNoteImages[pageNum]) {
-    const img = new Image();
-    img.onload = () => noteCtx.drawImage(img, 0, 0);
-    img.src = savedNoteImages[pageNum];
-  } else {
-    const mat = currentViewerMaterial;
-    if (mat && mat.notes && currentNoteId) {
-      const pageNotes = mat.notes[String(pageNum)] || [];
-      const note = pageNotes.find(n => n.id === currentNoteId);
-      if (note && note.strokes && note.strokes.length > 0) { noteStrokes = note.strokes; redrawNoteStrokes(); }
-      else if (note && note.type === 'handwriting' && (!note.strokes || note.strokes.length === 0)) { /* fresh note, start empty */ }
-    }
+  const mat = currentViewerMaterial;
+  if (mat && mat.notes && currentNoteId) {
+    const pageNotes = mat.notes[String(pageNum)] || [];
+    const note = pageNotes.find(n => n.id === currentNoteId);
+    if (note && note.strokes && note.strokes.length > 0) { noteStrokes = note.strokes; redrawNoteStrokes(); }
+    else { /* fresh note */ }
   }
   drawNoteFormatLines();
 
-  canvas.onmousedown = (e) => noteStart(e);
-  canvas.onmousemove = (e) => noteMove(e);
-  canvas.onmouseup = () => noteEnd();
-  canvas.onmouseleave = () => noteEnd();
-  canvas.ontouchstart = (e) => { e.preventDefault(); noteStart(e.touches[0]); };
-  canvas.ontouchmove = (e) => { e.preventDefault(); noteMove(e.touches[0]); };
-  canvas.ontouchend = () => noteEnd();
+  canvas.onmousedown = (e) => {
+    if (noteTool === 'none') { startNoteCanvasPan(e); }
+    else noteStart(e);
+  };
+  canvas.onmousemove = (e) => {
+    if (noteTool === 'none') { doNoteCanvasPan(e); }
+    else noteMove(e);
+  };
+  canvas.onmouseup = () => {
+    if (noteTool === 'none') { stopNoteCanvasPan(); }
+    else noteEnd();
+  };
+  canvas.onmouseleave = () => {
+    if (noteTool === 'none') { stopNoteCanvasPan(); }
+    else noteEnd();
+  };
+  canvas.ontouchstart = (e) => { e.preventDefault(); noteTool === 'none' ? startNoteCanvasPan(e.touches[0]) : noteStart(e.touches[0]); };
+  canvas.ontouchmove = (e) => { e.preventDefault(); noteTool === 'none' ? doNoteCanvasPan(e.touches[0]) : noteMove(e.touches[0]); };
+  canvas.ontouchend = () => { noteTool === 'none' ? stopNoteCanvasPan() : noteEnd(); };
   canvas.ondblclick = (e) => addTextBox(e);
   initNoteWheelZoom();
-  // Restore images and text boxes
   restoreNoteImages(pageNum);
   restoreNoteTextBoxes(pageNum);
+}
+
+let notePanX = 0, notePanY = 0, notePanning = false, notePanSX = 0, notePanSY = 0;
+function startNoteCanvasPan(e) {
+  notePanning = true;
+  notePanSX = e.clientX - notePanX;
+  notePanSY = e.clientY - notePanY;
+  noteCanvas.style.cursor = 'grabbing';
+}
+function doNoteCanvasPan(e) {
+  if (!notePanning) return;
+  notePanX = e.clientX - notePanSX;
+  notePanY = e.clientY - notePanSY;
+  noteCanvas.style.transform = 'translate(' + notePanX + 'px, ' + notePanY + 'px) scale(' + noteZoom + ')';
+  noteCanvas.style.transformOrigin = '0 0';
+}
+function stopNoteCanvasPan() {
+  notePanning = false;
+  noteCanvas.style.cursor = 'grab';
 }
 
 function redrawNoteStrokes() {
@@ -2292,6 +2342,7 @@ function redrawNoteStrokes() {
 }
 
 function noteStart(e) {
+  if (noteTool === 'none') return;
   e.preventDefault(); e.stopPropagation();
   isDrawing = true;
   const rect = noteCanvas.getBoundingClientRect();
@@ -3053,6 +3104,78 @@ window.goHome = function() {
   renderAll();
 };
 
+window.setBgImage = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    localStorage.setItem('bg_image', e.target.result);
+    applyBgImage();
+    showToast('背景已更新');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+};
+
+window.resetBgImage = function() {
+  localStorage.removeItem('bg_image');
+  document.body.style.backgroundImage = '';
+  document.body.style.backgroundSize = '';
+  document.body.style.backgroundPosition = '';
+  document.body.style.backgroundRepeat = '';
+  document.body.style.backgroundAttachment = '';
+  document.getElementById('bgBlurSlider').value = 0;
+  document.getElementById('bgBlurLabel').textContent = '0';
+  document.getElementById('bgOpacitySlider').value = 30;
+  document.getElementById('bgOpacityLabel').textContent = '30%';
+  showToast('背景已重置');
+};
+
+function applyBgImage() {
+  const img = localStorage.getItem('bg_image');
+  if (!img) return;
+  document.body.style.backgroundImage = 'url(' + img + ')';
+  document.body.style.backgroundSize = 'cover';
+  document.body.style.backgroundPosition = 'center';
+  document.body.style.backgroundRepeat = 'no-repeat';
+  document.body.style.backgroundAttachment = 'fixed';
+  updateBgBlur();
+  updateBgOpacity();
+}
+
+window.updateBgBlur = function() {
+  const val = document.getElementById('bgBlurSlider').value;
+  document.getElementById('bgBlurLabel').textContent = val;
+  if (document.body.style.backgroundImage) {
+    let styleEl = document.getElementById('bgBlurStyle');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'bgBlurStyle';
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = 'body::before { content:""; position:fixed; inset:0; z-index:-1; background:inherit; background-size:cover; background-position:center; filter:blur(' + val + 'px); }';
+  }
+  localStorage.setItem('bg_blur', val);
+};
+
+window.updateBgOpacity = function() {
+  const val = document.getElementById('bgOpacitySlider').value;
+  document.getElementById('bgOpacityLabel').textContent = val + '%';
+  document.body.style.setProperty('--bg-overlay-opacity', (val / 100).toString());
+  localStorage.setItem('bg_opacity', val);
+};
+
+function loadBgSettings() {
+  const img = localStorage.getItem('bg_image');
+  if (img) {
+    applyBgImage();
+    const blur = localStorage.getItem('bg_blur');
+    if (blur) { document.getElementById('bgBlurSlider').value = blur; updateBgBlur(); }
+    const opacity = localStorage.getItem('bg_opacity');
+    if (opacity) { document.getElementById('bgOpacitySlider').value = opacity; updateBgOpacity(); }
+  }
+}
+
 window.saveApiKey = function() {
   const input = document.getElementById('apiKeyInput');
   const status = document.getElementById('apiKeyStatus');
@@ -3101,6 +3224,8 @@ function init() {
     document.getElementById('fontSizeSlider').value = settings.fontSize;
     updateFontSize(settings.fontSize);
   }
+  // Load background
+  loadBgSettings();
   // Load saved API key
   const savedKey = localStorage.getItem('deepseek_api_key');
   if (savedKey) {
