@@ -242,7 +242,7 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 .fs-right-panel button.danger:hover { background:rgba(229,57,53,0.15); border-color:rgba(229,57,53,0.4); }
 
 /* ====== Note Panel ====== */
-.note-panel { position:absolute; top:0; right:0; width:420px; height:100%; background:var(--bg-card); border-left:1px solid var(--border); z-index:10; display:flex; flex-direction:column; animation:slideIn 0.25s ease; box-shadow:-4px 0 20px rgba(0,0,0,0.1); min-width:300px; max-width:700px; }
+.note-panel { position:absolute; top:0; right:0; width:420px; height:100%; background:var(--bg-card); border-left:1px solid var(--border); z-index:10; display:flex; flex-direction:column; animation:slideIn 0.25s ease; box-shadow:-4px 0 20px rgba(0,0,0,0.1); min-width:300px; max-width:70vw; }
 .note-panel .resize-handle { position:absolute; left:0; top:0; bottom:0; width:6px; cursor:col-resize; z-index:5; background:transparent; transition:background 0.2s; }
 .note-panel .resize-handle:hover, .note-panel .resize-handle:active { background:var(--accent); opacity:0.5; }
 @keyframes slideIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
@@ -402,6 +402,8 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 .hidden { display:none !important; }
 </style>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 </head>
 
 <body data-theme="rhine" data-mode="light">
@@ -1755,7 +1757,9 @@ function initNoteResize() {
     document.addEventListener('mouseup', stopResize);
   };
   function doResize(e) {
-    const newWidth = Math.max(300, Math.min(700, startWidth + (startX - e.clientX)));
+    const viewerBody = document.getElementById('viewerBody');
+    const maxWidth = viewerBody ? viewerBody.clientWidth * 0.7 : 700;
+    const newWidth = Math.max(300, Math.min(maxWidth, startWidth + (startX - e.clientX)));
     notePanelWidth = newWidth;
     panel.style.width = newWidth + 'px';
   }
@@ -2250,6 +2254,7 @@ function renderNoteContent(pageNum) {
     '<div class="note-chat-input-wrap">' +
     '<input type="text" id="noteChatInput" class="note-chat-input" placeholder="Ask AI about this page..." onkeydown="if(event.key===\'Enter\')sendChatMessage()">' +
     '<button class="note-chat-send" onclick="sendChatMessage()">↑</button>' +
+    '<button class="note-chat-send" onclick="takeChatScreenshot()" style="background:#555" title="截图提问">📷</button>' +
     '</div></div>';
   setTimeout(() => {
     initNoteCanvas(pageNum);
@@ -2300,12 +2305,18 @@ function initNoteCanvas(pageNum) {
   canvas.ontouchmove = (e) => { e.preventDefault(); noteTool === 'none' ? doNoteCanvasPan(e.touches[0]) : noteMove(e.touches[0]); };
   canvas.ontouchend = () => { noteTool === 'none' ? stopNoteCanvasPan() : noteEnd(); };
   canvas.ondblclick = (e) => addTextBox(e);
+  // Click canvas to exit chat focus
+  canvas.addEventListener('click', function() {
+    const ci = document.getElementById('noteChatInput');
+    if (ci && document.activeElement === ci) ci.blur();
+  });
   initNoteWheelZoom();
   restoreNoteImages(pageNum);
   restoreNoteTextBoxes(pageNum);
 }
 
 let notePanX = 0, notePanY = 0, notePanning = false, notePanSX = 0, notePanSY = 0;
+let chatImageData = null; // Image for next chat message
 function startNoteCanvasPan(e) {
   notePanning = true;
   notePanSX = e.clientX - notePanX;
@@ -2647,9 +2658,94 @@ function addSmartSummaryNote(ocrText, summary, imageData) {
 }
 
 // Chat functions
+function renderLatex(text) {
+  if (!text) return '';
+  // Replace $$...$$ (display math)
+  text = text.replace(/\$\$([\s\S]*?)\$\$/g, function(m, formula) {
+    try { return katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false }); }
+    catch(e) { return '<code>' + formula + '</code>'; }
+  });
+  // Replace $...$ (inline math)
+  text = text.replace(/\$([^\$]+?)\$/g, function(m, formula) {
+    try { return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false }); }
+    catch(e) { return '<code>' + formula + '</code>'; }
+  });
+  // Convert newlines to <br>
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
 function initChat() {
   const messages = document.getElementById('noteChatMessages');
   if (messages) messages.innerHTML = '';
+}
+
+// Chat screenshot
+let chatScreenshotOverlay = null;
+window.takeChatScreenshot = function() {
+  if (chatScreenshotOverlay) return;
+  chatScreenshotOverlay = document.createElement('div');
+  chatScreenshotOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;cursor:crosshair;';
+  chatScreenshotOverlay.innerHTML = '<div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:6px 18px;border-radius:16px;font-size:12px;z-index:601">框选截图区域 (Enter确认 Esc取消)</div><div id="chatSelBox" style="position:absolute;border:2px solid #10b981;background:rgba(16,185,129,0.1);display:none;pointer-events:none;z-index:600;"></div>';
+  let sel = false, sx = 0, sy = 0, ex = 0, ey = 0;
+  chatScreenshotOverlay.onmousedown = function(e) {
+    sel = true;
+    const r = chatScreenshotOverlay.getBoundingClientRect();
+    sx = e.clientX - r.left; sy = e.clientY - r.top;
+    document.getElementById('chatSelBox').style.display = 'block';
+  };
+  chatScreenshotOverlay.onmousemove = function(e) {
+    if (!sel) return;
+    const r = chatScreenshotOverlay.getBoundingClientRect();
+    ex = e.clientX - r.left; ey = e.clientY - r.top;
+    const box = document.getElementById('chatSelBox');
+    box.style.left = Math.min(sx, ex) + 'px';
+    box.style.top = Math.min(sy, ey) + 'px';
+    box.style.width = Math.abs(ex - sx) + 'px';
+    box.style.height = Math.abs(ey - sy) + 'px';
+  };
+  chatScreenshotOverlay.onmouseup = function() { sel = false; };
+  const confirm = function(e) {
+    if (e.key === 'Enter' && Math.abs(ex - sx) > 10) {
+      document.removeEventListener('keydown', confirm);
+      captureChatScreenshot(sx, sy, ex, ey);
+    } else if (e.key === 'Escape') {
+      document.removeEventListener('keydown', confirm);
+      chatScreenshotOverlay.remove();
+      chatScreenshotOverlay = null;
+    }
+  };
+  document.addEventListener('keydown', confirm);
+  document.body.appendChild(chatScreenshotOverlay);
+};
+
+function captureChatScreenshot(sx, sy, ex, ey) {
+  const box = document.getElementById('chatSelBox');
+  box.style.display = 'none';
+  const viewerContent = document.getElementById('viewerContent');
+  const vcRect = viewerContent.getBoundingClientRect();
+  const overlayRect = chatScreenshotOverlay.getBoundingClientRect();
+  const left = Math.min(sx, ex) - (vcRect.left - overlayRect.left);
+  const top = Math.min(sy, ey) - (vcRect.top - overlayRect.top);
+  const w = Math.abs(ex - sx);
+  const h = Math.abs(ey - sy);
+  
+  const pageCanvas = document.getElementById('pageCanvas');
+  if (pageCanvas) {
+    const compCanvas = document.createElement('canvas');
+    const scaleX = pageCanvas.width / pageCanvas.getBoundingClientRect().width;
+    const scaleY = pageCanvas.height / pageCanvas.getBoundingClientRect().height;
+    compCanvas.width = w * scaleX;
+    compCanvas.height = h * scaleY;
+    const ctx = compCanvas.getContext('2d');
+    ctx.drawImage(pageCanvas, left * scaleX, top * scaleY, w * scaleX, h * scaleY, 0, 0, compCanvas.width, compCanvas.height);
+    const penCanvasEl = document.getElementById('penCanvas');
+    if (penCanvasEl) ctx.drawImage(penCanvasEl, left * scaleX, top * scaleY, w * scaleX, h * scaleY, 0, 0, compCanvas.width, compCanvas.height);
+    chatImageData = compCanvas.toDataURL('image/png');
+  }
+  chatScreenshotOverlay.remove();
+  chatScreenshotOverlay = null;
+  showToast('截图已保存，发送消息时将附带图片');
 }
 
 window.sendChatMessage = async function() {
@@ -2659,7 +2755,12 @@ window.sendChatMessage = async function() {
   const text = input.value.trim();
   if (!text) return;
   
-  messages.innerHTML += '<div class="chat-msg chat-msg-user"><div class="chat-bubble">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div></div>';
+    let userMsgExtra = '';
+  if (chatImageData) userMsgExtra = ' <span style="font-size:9px;opacity:0.6">[截图]</span>';
+  messages.innerHTML += '<div class="chat-msg chat-msg-user"><div class="chat-bubble">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + userMsgExtra + '</div></div>';
+  if (chatImageData) {
+    messages.innerHTML += '<div class="chat-msg chat-msg-user"><img src="' + chatImageData + '" style="max-width:200px;max-height:120px;border-radius:8px;margin-bottom:4px"></div>';
+  }
   input.value = '';
   messages.scrollTop = messages.scrollHeight;
   
@@ -2681,7 +2782,12 @@ window.sendChatMessage = async function() {
       return;
     }
     
-    const prompt = '上下文:\n' + (context || '(无)') + '\n\n用户: ' + text + '\n\n请基于上下文简洁回答，中文。';
+    let prompt = '上下文:\n' + (context || '(无)') + '\n\n用户: ' + text + '\n\n请基于上下文简洁回答，中文。';
+    let hasImage = false;
+    if (chatImageData) {
+      hasImage = true;
+      prompt += '\n[注: 用户附带了截图图片]';
+    }
     
     const resp = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
@@ -2694,7 +2800,8 @@ window.sendChatMessage = async function() {
     });
     const data = await resp.json();
     const reply = data.choices ? data.choices[0].message.content : 'AI 回复失败';
-    document.getElementById(loadId).querySelector('.chat-bubble').textContent = reply;
+    document.getElementById(loadId).querySelector('.chat-bubble').innerHTML = renderLatex(reply);
+    chatImageData = null;
   } catch(e) {
     document.getElementById(loadId).querySelector('.chat-bubble').textContent = '错误: ' + e.message;
   }
