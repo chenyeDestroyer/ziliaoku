@@ -3326,6 +3326,19 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+window.addAIToNoteFromBtn = function(btn) {
+  var text = btn.getAttribute('data-ai-text');
+  if (!text) return;
+  text = text.replace(/&apos;/g, "'");
+  var wrap = document.getElementById('noteCanvasWrap');
+  if (!wrap) { showToast('No note canvas open'); return; }
+  var x = 20 + Math.random() * 30;
+  var y = 20 + Math.random() * 30;
+  createTextBoxEl(x, y, text, '11pt', false);
+  saveNoteStructures();
+  showToast('AI response added to note');
+};
 function init() {
   loadMaterials(); loadTrash(); renderAll();
 
@@ -3375,51 +3388,6 @@ function init() {
   console.log('Rhein Lab v3 ready. Materials:', materials.length, 'Trash:', trash.length);
 }
 
-/* Expose */
-window.openMaterial = openMaterial;
-window.viewerPrevPage = viewerPrevPage;
-window.viewerNextPage = viewerNextPage;
-window.viewerJumpPage = viewerJumpPage;
-window.viewerGoToPage = viewerGoToPage;
-window.viewerRotate = viewerRotate;
-window.closeViewer = closeViewer;
-window.toggleNotePanel = toggleNotePanel;
-window.setNoteMode = setNoteMode;
-window.setNoteColor = setNoteColor;
-window.setNoteTool = setNoteTool;
-window.clearNoteCanvas = clearNoteCanvas;
-window.saveNoteToMaterial = saveNoteToMaterial;
-window.handleNoteFileImport = handleNoteFileImport;
-window.toggleSettings = toggleSettings;
-window.updateFontSize = updateFontSize;
-window.setTheme = setTheme;
-window.toggleMode = toggleMode;
-window.deleteMaterial = deleteMaterial;
-window.closeConfirm = closeConfirm;
-window.handleFileImport = handleFileImport;
-window.openTrash = openTrash;
-window.closeTrash = closeTrash;
-window.restoreFromTrash = restoreFromTrash;
-window.permanentDelete = permanentDelete;
-window.deleteCardFromCabinet = deleteCardFromCabinet;
-window.toggleFullscreen = toggleFullscreen;
-window.addBlankPage = addBlankPage;
-window.addNoteFromFS = addNoteFromFS;
-window.togglePenTool = togglePenTool;
-window.toggleEraser = toggleEraser;
-window.setPenColor = setPenColor;
-window.undoPenStroke = undoPenStroke;
-window.refreshNotePanel = refreshNotePanel;
-window.showNewNoteDialog = showNewNoteDialog;
-window.createNewNote = createNewNote;
-window.openSpecificNote = openSpecificNote;
-window.deleteNote = deleteNote;
-window.renameNote = renameNote;
-window.closeNotePanel = closeNotePanel;
-window.openNotesManagement = openNotesManagement;
-window.closeNotesManagement = closeNotesManagement;
-window.jumpToNote = jumpToNote;
-window.deleteCurrentPage = deleteCurrentPage;
 
 init();
 </script>
