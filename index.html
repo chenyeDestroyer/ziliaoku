@@ -277,18 +277,6 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 .note-tool-btn { padding:4px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); cursor:pointer; font-size:10px; transition:all var(--transition); color:var(--text-secondary); }
 .note-tool-btn:hover { border-color:var(--accent); color:var(--accent); }
 .note-tool-btn.active { background:var(--accent-light); border-color:var(--accent); color:var(--accent); font-weight:600; }
-.note-chat { border-top:1px solid var(--border-light); display:flex; flex-direction:column; max-height:180px; min-height:60px; background:var(--bg-card); }
-.note-chat-messages { flex:1; overflow-y:auto; padding:6px 10px; display:flex; flex-direction:column; gap:4px; max-height:120px; font-size:11px; }
-.chat-msg { display:flex; }
-.chat-msg-user { justify-content:flex-end; }
-.chat-msg-ai { justify-content:flex-start; }
-.chat-bubble { max-width:85%; padding:6px 10px; border-radius:12px; line-height:1.4; word-break:break-word; }
-.chat-msg-user .chat-bubble { background:var(--accent); color:#fff; border-bottom-right-radius:3px; }
-.chat-msg-ai .chat-bubble { background:var(--border-light); color:var(--text-primary); border-bottom-left-radius:3px; }
-.note-chat-input-wrap { display:flex; gap:4px; padding:4px 8px; border-top:1px solid var(--border-light); }
-.note-chat-input { flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:16px; font-size:11px; background:var(--bg-card); color:var(--text-primary); outline:none; }
-.note-chat-input:focus { border-color:var(--accent); }
-.note-chat-send { width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; border:none; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; }
 .tb-delete { display:none; position:absolute; top:-8px; right:-8px; width:18px; height:18px; border-radius:50%; background:#e53935; color:#fff; border:none; cursor:pointer; font-size:10px; line-height:18px; text-align:center; padding:0; z-index:6; }
 .note-textbox:hover .tb-delete { display:block; }
 .note-file-import { padding:10px 14px; border-top:1px solid var(--border-light); display:flex; gap:6px; flex-wrap:wrap; }
@@ -413,7 +401,6 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 
 .hidden { display:none !important; }
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 </head>
@@ -494,18 +481,6 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
   </div>
 </main>
 
-<!-- Smart Summary overlay -->
-<div id="smartSummaryOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;cursor:crosshair;">
-  <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:var(--bg-card);padding:8px 20px;border-radius:20px;font-size:13px;color:var(--text-primary);box-shadow:var(--shadow-lg);z-index:501">
-    框选需要识别的区域，按 Enter 确认，Esc 取消
-  </div>
-  <div id="smartSelectBox" style="position:absolute;border:2px dashed var(--accent);background:rgba(59,125,216,0.08);display:none;pointer-events:none;z-index:500;"></div>
-  <div id="smartSummaryLoading" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-card);padding:20px 30px;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);text-align:center;z-index:502">
-    <div style="font-size:24px;margin-bottom:8px">🤖</div>
-    <div id="smartSummaryStatus">识别中...</div>
-  </div>
-</div>
-
 <!-- Viewer -->
 <div class="viewer-overlay hidden" id="viewerOverlay">
   <div class="viewer-container" id="viewerContainer">
@@ -523,7 +498,6 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
         <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:4px">页面操作</div>
         <button onclick="showNewNoteDialog()">+ 新建笔记</button>
         <button onclick="openNotesManagement()">📋 全局笔记管理</button>
-        <button onclick="startSmartSummary()">🤖 智能总结</button>
         <div style="font-size:11px;color:#888;letter-spacing:1px;margin:10px 0 4px" id="fsPanelNotesLabel">页面笔记</div>
         <div id="fsPanelNoteList" style="display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto"></div>
       </div>
@@ -585,6 +559,7 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
         <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
           <button onclick="document.getElementById('bgImageInput').click()" style="padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:11px;background:var(--bg-card);color:var(--text-primary)">选择图片</button>
           <button onclick="resetBgImage()" style="padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:11px;background:var(--bg-card);color:var(--text-primary)">重置</button>
+          <button onclick="openBgPositionEditor()" style="padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:11px;background:var(--bg-card);color:var(--text-primary)">位置/缩放</button>
           <input type="file" id="bgImageInput" accept="image/*" style="display:none" onchange="setBgImage(event)">
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
@@ -2262,20 +2237,9 @@ function renderNoteContent(pageNum) {
     '<button class="note-tool-btn" onclick="clearNoteCanvas()">Clear</button>' +
     '<button class="note-tool-btn" onclick="saveNoteToMaterial()">Save</button>' +
     '</div>' +
-    '<div class="note-chat" id="noteChat">' +
-    '<div class="note-chat-messages" id="noteChatMessages"></div>' +
-    '<div class="note-chat-input-wrap">' +
-    '<input type="text" id="noteChatInput" class="note-chat-input" placeholder="Ask AI about this page..." onkeydown="if(event.key===\'Enter\')sendChatMessage()">' +
-    '<button class="note-chat-send" onclick="sendChatMessage()">↑</button>' +
-    '<button class="note-chat-send" onclick="takeChatScreenshot()" style="background:#555" title="截图提问">📷</button>' +
-    '</div></div>';
+    ;
   setTimeout(() => {
     initNoteCanvas(pageNum);
-    initChat();
-    const ci = document.getElementById('noteChatInput');
-    if (ci) { ci.addEventListener('mousedown', e => e.stopPropagation()); ci.addEventListener('wheel', e => e.stopPropagation()); }
-    const cm = document.getElementById('noteChatMessages');
-    if (cm) { cm.addEventListener('mousedown', e => e.stopPropagation()); cm.addEventListener('wheel', e => e.stopPropagation()); }
   }, 50);
 }
 
@@ -2319,17 +2283,12 @@ function initNoteCanvas(pageNum) {
   canvas.ontouchend = () => { noteTool === 'none' ? stopNoteCanvasPan() : noteEnd(); };
   canvas.ondblclick = (e) => addTextBox(e);
   // Click canvas to exit chat focus
-  canvas.addEventListener('click', function() {
-    const ci = document.getElementById('noteChatInput');
-    if (ci && document.activeElement === ci) ci.blur();
-  });
   initNoteWheelZoom();
   restoreNoteImages(pageNum);
   restoreNoteTextBoxes(pageNum);
 }
 
 let notePanX = 0, notePanY = 0, notePanning = false, notePanSX = 0, notePanSY = 0;
-let chatImageData = null; // Image for next chat message
 function startNoteCanvasPan(e) {
   notePanning = true;
   notePanSX = e.clientX - notePanX;
@@ -2425,406 +2384,6 @@ function drawNoteFormatLines() {
   noteCtx.restore();
 }
 
-// Smart Summary - OCR + AI
-let smartSelecting = false;
-let smartSelX = 0, smartSelY = 0, smartSelW = 0, smartSelH = 0;
-let smartSelStartX = 0, smartSelStartY = 0;
-function getDeepSeekKey() { return localStorage.getItem('deepseek_api_key') || ''; }
-
-window.startSmartSummary = function() {
-  if (!currentViewerMaterial) { showToast('请先打开资料'); return; }
-  // Close right panel
-  document.getElementById('fsRightPanel').classList.remove('open');
-  const overlay = document.getElementById('smartSummaryOverlay');
-  overlay.classList.remove('hidden');
-  smartSelecting = false;
-  document.getElementById('smartSelectBox').style.display = 'none';
-  document.getElementById('smartSummaryLoading').classList.add('hidden');
-  overlay.onmousedown = onSmartSelStart;
-  overlay.onmousemove = onSmartSelMove;
-  overlay.onmouseup = onSmartSelEnd;
-  overlay.onkeydown = onSmartKey;
-  overlay.focus();
-};
-
-function onSmartSelStart(e) {
-  if (e.target.closest('#smartSummaryLoading')) return;
-  smartSelecting = true;
-  const rect = e.currentTarget.getBoundingClientRect();
-  smartSelStartX = e.clientX - rect.left;
-  smartSelStartY = e.clientY - rect.top;
-  const box = document.getElementById('smartSelectBox');
-  box.style.display = 'block';
-  box.style.left = smartSelStartX + 'px';
-  box.style.top = smartSelStartY + 'px';
-  box.style.width = '1px';
-  box.style.height = '1px';
-}
-
-function onSmartSelMove(e) {
-  if (!smartSelecting) return;
-  const rect = e.currentTarget.getBoundingClientRect();
-  const cx = e.clientX - rect.left;
-  const cy = e.clientY - rect.top;
-  const box = document.getElementById('smartSelectBox');
-  smartSelX = Math.min(smartSelStartX, cx);
-  smartSelY = Math.min(smartSelStartY, cy);
-  smartSelW = Math.abs(cx - smartSelStartX);
-  smartSelH = Math.abs(cy - smartSelStartY);
-  box.style.left = smartSelX + 'px';
-  box.style.top = smartSelY + 'px';
-  box.style.width = smartSelW + 'px';
-  box.style.height = smartSelH + 'px';
-}
-
-function onSmartSelEnd(e) {
-  if (!smartSelecting) return;
-  smartSelecting = false;
-  if (smartSelW < 10 || smartSelH < 10) return;
-  // Auto-confirm on mouse up with valid selection
-  confirmSmartSummary();
-}
-
-function onSmartKey(e) {
-  if (e.key === 'Enter' && smartSelW > 10 && smartSelH > 10) {
-    confirmSmartSummary();
-  } else if (e.key === 'Escape') {
-    cancelSmartSummary();
-  }
-}
-
-function cancelSmartSummary() {
-  const overlay = document.getElementById('smartSummaryOverlay');
-  overlay.classList.add('hidden');
-  overlay.onmousedown = null;
-  overlay.onmousemove = null;
-  overlay.onmouseup = null;
-  overlay.onkeydown = null;
-  smartSelecting = false;
-}
-
-async function confirmSmartSummary() {
-  const overlay = document.getElementById('smartSummaryOverlay');
-  const loading = document.getElementById('smartSummaryLoading');
-  const status = document.getElementById('smartSummaryStatus');
-  loading.classList.remove('hidden');
-  overlay.onmousedown = null;
-  overlay.onmousemove = null;
-  overlay.onmouseup = null;
-  document.getElementById('smartSelectBox').style.display = 'none';
-
-  try {
-    // Capture the selected area from the viewer
-    status.textContent = '正在截取区域...';
-    const viewerContent = document.getElementById('viewerContent');
-    const vcRect = viewerContent.getBoundingClientRect();
-    
-    // Use html2canvas-like approach: get the page canvas
-    const pageCanvas = document.getElementById('pageCanvas');
-    const penCanvas = document.getElementById('penCanvas');
-    let imageData = null;
-    
-    if (pageCanvas) {
-      // Create a composite canvas
-      const compCanvas = document.createElement('canvas');
-      compCanvas.width = pageCanvas.width;
-      compCanvas.height = pageCanvas.height;
-      const ctx = compCanvas.getContext('2d');
-      ctx.drawImage(pageCanvas, 0, 0);
-      if (penCanvas) ctx.drawImage(penCanvas, 0, 0);
-      
-      // Calculate the selection relative to page canvas
-      const pageRect = pageCanvas.getBoundingClientRect();
-      const scaleX = pageCanvas.width / pageRect.width;
-      const scaleY = pageCanvas.height / pageRect.height;
-      const sx = Math.max(0, (smartSelX - pageRect.left + overlay.getBoundingClientRect().left) * scaleX);
-      const sy = Math.max(0, (smartSelY - pageRect.top + overlay.getBoundingClientRect().top) * scaleY);
-      const sw = Math.min(pageCanvas.width - sx, smartSelW * scaleX);
-      const sh = Math.min(pageCanvas.height - sy, smartSelH * scaleY);
-      
-      if (sw > 0 && sh > 0) {
-        const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = sw;
-        cropCanvas.height = sh;
-        cropCanvas.getContext('2d').drawImage(compCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
-        imageData = cropCanvas.toDataURL('image/png');
-      }
-    }
-    
-    if (!imageData) {
-      // Fallback: try to capture the docx page div
-      const docxPage = document.querySelector('.docx-page');
-      if (docxPage) {
-        // For docx, use a simpler approach - just get the visible text
-        imageData = null;
-      }
-    }
-
-    if (imageData) {
-      // OCR with Tesseract
-      status.textContent = '正在进行OCR识别...';
-      const { data: { text } } = await Tesseract.recognize(imageData, 'chi_sim+eng', {
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            status.textContent = 'OCR识别中... ' + Math.round(m.progress * 100) + '%';
-          }
-        }
-      });
-      
-      const ocrText = text.trim();
-      if (!ocrText) {
-        status.textContent = '未识别到文字';
-        setTimeout(cancelSmartSummary, 1500);
-        return;
-      }
-      
-      // AI Summary with DeepSeek
-      status.textContent = '正在AI总结...';
-      const summary = await callDeepSeek(ocrText);
-      
-      // Create a note with the summary
-      addSmartSummaryNote(ocrText, summary, imageData);
-    } else {
-      status.textContent = '无法截取区域内容，请重试';
-      setTimeout(cancelSmartSummary, 1500);
-    }
-  } catch(e) {
-    console.error('Smart summary error:', e);
-    status.textContent = '错误: ' + e.message;
-    setTimeout(cancelSmartSummary, 2000);
-  }
-}
-
-async function callDeepSeek(text) {
-  const apiKey = getDeepSeekKey();
-  if (!apiKey) throw new Error('请先在设置中配置 DeepSeek API Key');
-  const prompt = '请用简洁的中文总结以下内容，提取关键要点，使用要点列表格式，控制在200字以内：\n\n' + text.substring(0, 3000);
-  const resp = await fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 500,
-      temperature: 0.3
-    })
-  });
-  if (!resp.ok) throw new Error('AI API error: ' + resp.status);
-  const data = await resp.json();
-  return data.choices[0].message.content;
-}
-
-function addSmartSummaryNote(ocrText, summary, imageData) {
-  const mat = currentViewerMaterial;
-  if (!mat) return;
-  if (!mat.notes) mat.notes = {};
-  const key = String(viewerCurrentPage);
-  if (!mat.notes[key]) mat.notes[key] = [];
-  
-  // Find or create current note
-  let noteId = currentNoteId;
-  let note = null;
-  if (noteId) {
-    note = mat.notes[key].find(n => n.id === noteId);
-  }
-  if (!note) {
-    // Create a new note if none exists
-    noteId = 'n_' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
-    note = {
-      id: noteId, title: 'Note ' + (mat.notes[key].length + 1), type: 'handwriting',
-      strokes: [], textBoxes: [], images: [], createdAt: Date.now()
-    };
-    mat.notes[key].push(note);
-  }
-  
-  // Add AI summary as a textbox to this note
-  if (!note.textBoxes) note.textBoxes = [];
-  const summaryText = '📋 AI总结:\n' + summary;
-  note.textBoxes.push({
-    x: 30 + Math.random() * 40,
-    y: 30 + Math.random() * 40,
-    text: summaryText,
-    fontSize: '12pt'
-  });
-  // Also add screenshot as image
-  if (imageData && !note.images) note.images = [];
-  if (imageData && note.images) {
-    note.images.push({
-      x: 25, y: note.textBoxes.length > 0 ? 120 : 20,
-      width: 200, height: 150,
-      rotation: 0,
-      data: imageData
-    });
-  }
-  saveMaterials();
-  
-  // Close overlay, refresh and open the note
-  cancelSmartSummary();
-  
-  currentNoteId = noteId;
-  currentNotePage = viewerCurrentPage;
-  notePanelOpen = true;
-  noteImages = []; noteTextBoxes = []; selectedImageIdx = -1; selectedTextBoxIdx = -1;
-  openNotePanel(viewerCurrentPage);
-  refreshNotePanel();
-  showToast('AI总结已插入');
-}
-
-// Chat functions
-function renderLatex(text) {
-  if (!text) return '';
-  // Replace $$...$$ (display math)
-  text = text.replace(/\$\$([\s\S]*?)\$\$/g, function(m, formula) {
-    try { return katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false }); }
-    catch(e) { return '<code>' + formula + '</code>'; }
-  });
-  // Replace $...$ (inline math)
-  text = text.replace(/\$([^\$]+?)\$/g, function(m, formula) {
-    try { return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false }); }
-    catch(e) { return '<code>' + formula + '</code>'; }
-  });
-  // Convert newlines to <br>
-  text = text.replace(/\n/g, '<br>');
-  return text;
-}
-
-function initChat() {
-  const messages = document.getElementById('noteChatMessages');
-  if (messages) messages.innerHTML = '';
-}
-
-// Chat screenshot
-let chatScreenshotOverlay = null;
-window.takeChatScreenshot = function() {
-  if (chatScreenshotOverlay) return;
-  chatScreenshotOverlay = document.createElement('div');
-  chatScreenshotOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;cursor:crosshair;';
-  chatScreenshotOverlay.innerHTML = '<div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:6px 18px;border-radius:16px;font-size:12px;z-index:601">框选截图区域 (Enter确认 Esc取消)</div><div id="chatSelBox" style="position:absolute;border:2px solid #10b981;background:rgba(16,185,129,0.1);display:none;pointer-events:none;z-index:600;"></div>';
-  let sel = false, sx = 0, sy = 0, ex = 0, ey = 0;
-  chatScreenshotOverlay.onmousedown = function(e) {
-    sel = true;
-    const r = chatScreenshotOverlay.getBoundingClientRect();
-    sx = e.clientX - r.left; sy = e.clientY - r.top;
-    document.getElementById('chatSelBox').style.display = 'block';
-  };
-  chatScreenshotOverlay.onmousemove = function(e) {
-    if (!sel) return;
-    const r = chatScreenshotOverlay.getBoundingClientRect();
-    ex = e.clientX - r.left; ey = e.clientY - r.top;
-    const box = document.getElementById('chatSelBox');
-    box.style.left = Math.min(sx, ex) + 'px';
-    box.style.top = Math.min(sy, ey) + 'px';
-    box.style.width = Math.abs(ex - sx) + 'px';
-    box.style.height = Math.abs(ey - sy) + 'px';
-  };
-  chatScreenshotOverlay.onmouseup = function() { sel = false; };
-  const confirm = function(e) {
-    if (e.key === 'Enter' && Math.abs(ex - sx) > 10) {
-      document.removeEventListener('keydown', confirm);
-      captureChatScreenshot(sx, sy, ex, ey);
-    } else if (e.key === 'Escape') {
-      document.removeEventListener('keydown', confirm);
-      chatScreenshotOverlay.remove();
-      chatScreenshotOverlay = null;
-    }
-  };
-  document.addEventListener('keydown', confirm);
-  document.body.appendChild(chatScreenshotOverlay);
-};
-
-function captureChatScreenshot(sx, sy, ex, ey) {
-  const box = document.getElementById('chatSelBox');
-  box.style.display = 'none';
-  const viewerContent = document.getElementById('viewerContent');
-  const vcRect = viewerContent.getBoundingClientRect();
-  const overlayRect = chatScreenshotOverlay.getBoundingClientRect();
-  const left = Math.min(sx, ex) - (vcRect.left - overlayRect.left);
-  const top = Math.min(sy, ey) - (vcRect.top - overlayRect.top);
-  const w = Math.abs(ex - sx);
-  const h = Math.abs(ey - sy);
-  
-  const pageCanvas = document.getElementById('pageCanvas');
-  if (pageCanvas) {
-    const compCanvas = document.createElement('canvas');
-    const scaleX = pageCanvas.width / pageCanvas.getBoundingClientRect().width;
-    const scaleY = pageCanvas.height / pageCanvas.getBoundingClientRect().height;
-    compCanvas.width = w * scaleX;
-    compCanvas.height = h * scaleY;
-    const ctx = compCanvas.getContext('2d');
-    ctx.drawImage(pageCanvas, left * scaleX, top * scaleY, w * scaleX, h * scaleY, 0, 0, compCanvas.width, compCanvas.height);
-    const penCanvasEl = document.getElementById('penCanvas');
-    if (penCanvasEl) ctx.drawImage(penCanvasEl, left * scaleX, top * scaleY, w * scaleX, h * scaleY, 0, 0, compCanvas.width, compCanvas.height);
-    chatImageData = compCanvas.toDataURL('image/png');
-  }
-  chatScreenshotOverlay.remove();
-  chatScreenshotOverlay = null;
-  showToast('截图已保存，发送消息时将附带图片');
-}
-
-window.sendChatMessage = async function() {
-  const input = document.getElementById('noteChatInput');
-  const messages = document.getElementById('noteChatMessages');
-  if (!input || !messages) return;
-  const text = input.value.trim();
-  if (!text) return;
-  
-    let userMsgExtra = '';
-  if (chatImageData) userMsgExtra = ' <span style="font-size:9px;opacity:0.6">[截图]</span>';
-  messages.innerHTML += '<div class="chat-msg chat-msg-user"><div class="chat-bubble">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + userMsgExtra + '</div></div>';
-  if (chatImageData) {
-    messages.innerHTML += '<div class="chat-msg chat-msg-user"><img src="' + chatImageData + '" style="max-width:200px;max-height:120px;border-radius:8px;margin-bottom:4px"></div>';
-  }
-  input.value = '';
-  messages.scrollTop = messages.scrollHeight;
-  
-  const loadId = 'load_' + Date.now();
-  messages.innerHTML += '<div class="chat-msg chat-msg-ai" id="' + loadId + '"><div class="chat-bubble">🤔 思考中...</div></div>';
-  messages.scrollTop = messages.scrollHeight;
-  
-  try {
-    let context = '';
-    document.querySelectorAll('.note-textbox').forEach(tb => { if (tb.textContent) context += tb.textContent + '\n'; });
-    if (!context.trim()) {
-      const docxPage = document.querySelector('.docx-page');
-      if (docxPage) context = docxPage.textContent.substring(0, 3000);
-    }
-    
-    const apiKey = getDeepSeekKey();
-    if (!apiKey) {
-      document.getElementById(loadId).querySelector('.chat-bubble').textContent = '请先在设置中配置 API Key';
-      return;
-    }
-    
-    // Get material-specific bot prompt
-    let botPrompt = '';
-    if (currentViewerMaterial && currentViewerMaterial.botPrompt) {
-      botPrompt = currentViewerMaterial.botPrompt;
-    }
-    let prompt = (botPrompt ? '系统要求: ' + botPrompt + '\n\n' : '') + '上下文:\n' + (context || '(无)') + '\n\n用户: ' + text + '\n\n请基于上下文简洁回答，中文。';
-    let hasImage = false;
-    if (chatImageData) {
-      hasImage = true;
-      prompt += '\n[注: 用户附带了截图图片]';
-    }
-    
-    const resp = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [{ role: 'user', content: prompt.substring(0, 4000) }],
-        max_tokens: 600, temperature: 0.5
-      })
-    });
-    const data = await resp.json();
-    const reply = data.choices ? data.choices[0].message.content : 'AI 回复失败';
-    document.getElementById(loadId).querySelector('.chat-bubble').innerHTML = renderLatex(reply);
-    chatImageData = null;
-  } catch(e) {
-    document.getElementById(loadId).querySelector('.chat-bubble').textContent = '错误: ' + e.message;
-  }
-  messages.scrollTop = messages.scrollHeight;
-};
 
 // Quick new note
 window.quickNewNote = function() {
@@ -3242,8 +2801,95 @@ window.setBgImage = function(event) {
   event.target.value = '';
 };
 
+// Background position editor
+window.openBgPositionEditor = function() {
+  const img = localStorage.getItem('bg_image');
+  if (!img) { showToast('请先选择背景图片'); return; }
+  
+  const posX = localStorage.getItem('bg_pos_x') || '50';
+  const posY = localStorage.getItem('bg_pos_y') || '50';
+  const zoom = localStorage.getItem('bg_zoom') || '100';
+  const blur = localStorage.getItem('bg_blur') || '0';
+  const opacity = localStorage.getItem('bg_opacity') || '30';
+  const themeBg = getComputedStyle(document.documentElement).getPropertyValue('--bg-main').trim() || '#f4f6f9';
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'bgPosEditor';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+  overlay.innerHTML =
+    '<div style="font-size:14px;color:#fff;margin-bottom:10px;font-weight:500;letter-spacing:1px">调整背景位置与缩放</div>' +
+    '<div style="position:relative;width:75vw;max-width:900px;height:55vh;overflow:hidden;border:2px solid var(--accent);border-radius:10px;cursor:grab;box-shadow:0 8px 40px rgba(0,0,0,0.5);" id="bgPosPreview">' +
+    '<div style="position:absolute;inset:0;background:' + themeBg + ';"></div>' +
+    '<img src="' + img + '" id="bgPosImg" style="position:absolute;width:' + zoom + '%;left:' + posX + '%;top:' + posY + '%;transform:translate(-' + posX + '%, -' + posY + '%);pointer-events:none;user-select:none;filter:blur(' + blur + 'px);">' +
+    '<div style="position:absolute;inset:0;background:' + themeBg + ';opacity:' + (1 - opacity/100) + ';pointer-events:none;"></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:16px;align-items:center;margin-top:14px;background:var(--bg-card);padding:10px 20px;border-radius:24px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">' +
+    '<span style="font-size:11px;color:var(--text-secondary);font-weight:500">缩放</span>' +
+    '<input type="range" min="50" max="200" value="' + zoom + '" id="bgZoomSlider" oninput="updateBgPreview()" style="width:140px;accent-color:var(--accent)">' +
+    '<span id="bgZoomLabel" style="font-size:12px;min-width:40px;text-align:center;font-weight:600;color:var(--text-primary)">' + zoom + '%</span>' +
+    '<span style="width:1px;height:20px;background:var(--border);margin:0 4px"></span>' +
+    '<span style="font-size:11px;color:var(--text-secondary)">拖动预览调整位置</span>' +
+    '<button onclick="saveBgPosition()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">保存</button>' +
+    '<button onclick="document.getElementById(\'bgPosEditor\').remove()" style="padding:8px 20px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--text-primary);cursor:pointer;font-size:12px;transition:all 0.2s" onmouseover="this.style.background='var(--border-light)'" onmouseout="this.style.background='transparent'">取消</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  
+  // Drag to reposition
+  const preview = document.getElementById('bgPosPreview');
+  let dragging = false, dsx = 0, dsy = 0, dpx = parseFloat(posX), dpy = parseFloat(posY);
+  preview.onmousedown = function(e) {
+    dragging = true; preview.style.cursor = 'grabbing';
+    dsx = e.clientX; dsy = e.clientY;
+    dpx = parseFloat(localStorage.getItem('bg_pos_x')||'50');
+    dpy = parseFloat(localStorage.getItem('bg_pos_y')||'50');
+  };
+  document.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    const pr = preview.getBoundingClientRect();
+    const z = parseInt(document.getElementById('bgZoomSlider').value);
+    const newX = dpx + (e.clientX - dsx) / pr.width * 100 / (z/100);
+    const newY = dpy + (e.clientY - dsy) / pr.height * 100 / (z/100);
+    localStorage.setItem('bg_pos_x', Math.max(0, Math.min(100, newX)).toString());
+    localStorage.setItem('bg_pos_y', Math.max(0, Math.min(100, newY)).toString());
+    updateBgPreview();
+  });
+  document.addEventListener('mouseup', function() {
+    dragging = false;
+    if (preview) preview.style.cursor = 'grab';
+  });
+  
+  // Close on overlay click
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+};
+
+function updateBgPreview() {
+  const img = document.getElementById('bgPosImg');
+  const slider = document.getElementById('bgZoomSlider');
+  const label = document.getElementById('bgZoomLabel');
+  if (!img || !slider) return;
+  const zoom = slider.value;
+  label.textContent = zoom + '%';
+  localStorage.setItem('bg_zoom', zoom);
+  const posX = localStorage.getItem('bg_pos_x') || '50';
+  const posY = localStorage.getItem('bg_pos_y') || '50';
+  img.style.width = zoom + '%';
+  img.style.left = posX + '%';
+  img.style.top = posY + '%';
+  img.style.transform = 'translate(-' + posX + '%, -' + posY + '%)';
+}
+
+function saveBgPosition() {
+  const editor = document.getElementById('bgPosEditor');
+  if (editor) editor.remove();
+  applyBgImage();
+  showToast('背景位置已保存');
+}
+
 window.resetBgImage = function() {
   localStorage.removeItem('bg_image');
+  localStorage.removeItem('bg_pos_x');
+  localStorage.removeItem('bg_pos_y');
+  localStorage.removeItem('bg_zoom');
   document.body.style.backgroundImage = '';
   document.body.style.backgroundSize = '';
   document.body.style.backgroundPosition = '';
@@ -3259,9 +2905,12 @@ window.resetBgImage = function() {
 function applyBgImage() {
   const img = localStorage.getItem('bg_image');
   if (!img) return;
+  const posX = localStorage.getItem('bg_pos_x') || '50';
+  const posY = localStorage.getItem('bg_pos_y') || '50';
+  const zoom = localStorage.getItem('bg_zoom') || '100';
   document.body.style.backgroundImage = 'url(' + img + ')';
-  document.body.style.backgroundSize = 'cover';
-  document.body.style.backgroundPosition = 'center';
+  document.body.style.backgroundSize = zoom + '%';
+  document.body.style.backgroundPosition = posX + '% ' + posY + '%';
   document.body.style.backgroundRepeat = 'no-repeat';
   document.body.style.backgroundAttachment = 'fixed';
   updateBgBlur();
@@ -3286,7 +2935,15 @@ window.updateBgBlur = function() {
 window.updateBgOpacity = function() {
   const val = document.getElementById('bgOpacitySlider').value;
   document.getElementById('bgOpacityLabel').textContent = val + '%';
-  document.body.style.setProperty('--bg-overlay-opacity', (val / 100).toString());
+  // Use pseudo-element opacity via style
+  let styleEl = document.getElementById('bgOpacityStyle');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'bgOpacityStyle';
+    document.head.appendChild(styleEl);
+  }
+  const opacityVal = val / 100;
+  styleEl.textContent = 'body::after { content:""; position:fixed; inset:0; z-index:-1; background:var(--bg-main); opacity:' + (1 - opacityVal) + '; pointer-events:none; }';
   localStorage.setItem('bg_opacity', val);
 };
 
@@ -3298,6 +2955,10 @@ function loadBgSettings() {
     if (blur) { document.getElementById('bgBlurSlider').value = blur; updateBgBlur(); }
     const opacity = localStorage.getItem('bg_opacity');
     if (opacity) { document.getElementById('bgOpacitySlider').value = opacity; updateBgOpacity(); }
+    const posX = localStorage.getItem('bg_pos_x');
+    const posY = localStorage.getItem('bg_pos_y');
+    const zoom = localStorage.getItem('bg_zoom');
+    if (posX || posY || zoom) applyBgImage();
   }
 }
 
