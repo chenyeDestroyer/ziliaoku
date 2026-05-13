@@ -211,8 +211,7 @@ body.fullscreen-active .viewer-footer button:hover { color:#fff; border-color:#f
 body.fullscreen-active .viewer-footer button.active-tool { background:var(--accent); color:#fff; border-color:var(--accent); }
 body.fullscreen-active .viewer-footer .page-input { color:#fff; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); }
 body.fullscreen-active .viewer-footer .page-info { color:#aaa; }
-body.fullscreen-active .viewer-header button[onclick*="deleteMaterial"] { display:none; }
-body.fullscreen-active .viewer-header button[onclick*="toggleNotePanel"] { display:none; }
+
 body.fullscreen-active .note-panel { z-index:30; top:52px; bottom:44px; height:auto; }
 body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 
@@ -499,8 +498,6 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
     <div class="viewer-header">
       <h3 id="viewerTitle">资料浏览</h3>
       <button class="topbar-btn" onclick="toggleFullscreen()" title="全屏" id="fullscreenBtn">⛶</button>
-      <button class="topbar-btn" onclick="deleteMaterial()" title="删除">✖</button>
-      <button class="topbar-btn" onclick="toggleNotePanel()" title="笔记" id="noteToggleBtn">✎</button>
       <button class="close-btn" onclick="closeViewer()">✕</button>
     </div>
     <div class="viewer-body" id="viewerBody">
@@ -1594,14 +1591,18 @@ function renderNotesManagement(mat) {
 window.jumpToNote = function(matId, pageNum, noteId) {
   closeNotesManagement();
   window.openMaterial(matId);
-  // Need to wait for viewer to open, then navigate
+  // Wait for viewer to open, then enter fullscreen and open note
   setTimeout(() => {
+    if (!isFullscreen) enterFullscreen();
     if (viewerPdfDoc || docxPageData[matId]) {
       goToViewerPage(pageNum);
     }
     setTimeout(() => {
+      if (noteCanvas) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
+      if (currentNoteId) { saveCurrentNote(); saveNoteStructures(); }
       currentNoteId = noteId;
       currentNotePage = pageNum;
+      delete savedNoteImages[currentNotePage];
       notePanelOpen = true;
       openNotePanel(pageNum);
       refreshNotePanel();
@@ -2031,6 +2032,7 @@ function updateTrashBadge() {
 
 /* ========== Note Panel ========== */
 window.toggleNotePanel = function() {
+  if (!isFullscreen) { showToast('Please enter fullscreen first'); return; }
   if (notePanelOpen) {
     if (noteCanvas && currentViewerMaterial) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
     if (currentNoteId) saveCurrentNote();
@@ -2059,8 +2061,11 @@ window.toggleNotePanel = function() {
 };
 
 window.openSpecificNote = function(noteId) {
+  if (noteCanvas) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
+  if (currentNoteId) { saveCurrentNote(); saveNoteStructures(); }
   currentNoteId = noteId;
   currentNotePage = viewerCurrentPage;
+  delete savedNoteImages[currentNotePage];
   notePanelOpen = true;
   openNotePanel(currentNotePage);
 };
@@ -2087,6 +2092,9 @@ function openNotePanel(pageNum) {
   panel.classList.remove('hidden');
   const mat = currentViewerMaterial;
   if (!mat) return;
+  // Save previous note state
+  if (noteCanvas && currentViewerMaterial) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
+  if (currentNoteId && currentNoteId !== (currentNoteId)) { saveCurrentNote(); saveNoteStructures(); }
 
   // Find current note
   const pageNotes = (mat.notes && mat.notes[String(pageNum)]) || [];
@@ -2168,6 +2176,7 @@ window.navNote = function(dir) {
   if (noteCanvas) savedNoteImages[currentNotePage] = noteCanvas.toDataURL();
   saveCurrentNote();
   saveNoteStructures();
+  delete savedNoteImages[currentNotePage];
   noteImages = []; noteTextBoxes = []; selectedImageIdx = -1; selectedTextBoxIdx = -1;
   const curIdx = pageNotes.findIndex(n => n.id === currentNoteId);
   const newIdx = (curIdx + dir + pageNotes.length) % pageNotes.length;
@@ -2658,6 +2667,7 @@ window.quickNewNote = function() {
   currentNotePage = viewerCurrentPage;
   notePanelOpen = true;
   noteImages = []; noteTextBoxes = []; selectedImageIdx = -1; selectedTextBoxIdx = -1;
+  delete savedNoteImages[currentNotePage];
   openNotePanel(viewerCurrentPage);
   refreshNotePanel();
   showToast('New note created');
