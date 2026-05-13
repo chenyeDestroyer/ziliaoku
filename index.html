@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rhein Lab · Document System</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 <style>
 :root {
@@ -484,7 +484,7 @@ body.fullscreen-active .note-panel .note-panel-header { padding-top:4px; }
 
 <script>
 if (typeof pdfjsLib !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
 /* ========== State ========== */
@@ -830,7 +830,7 @@ async function openPdfViewer(mat) {
   const container = document.getElementById('viewerContent');
 
   if (typeof pdfjsLib === 'undefined') {
-    container.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:40px"><p style="font-size:18px;margin-bottom:8px">PDF.js loading...</p><p style="font-size:12px;opacity:0.6">Please check your internet connection</p></div>';
+    container.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:40px"><p style="font-size:18px;margin-bottom:8px">PDF.js not loaded</p><p style="font-size:12px;opacity:0.6">Check internet connection</p></div>';
     return;
   }
 
@@ -838,27 +838,24 @@ async function openPdfViewer(mat) {
 
   try {
     let bytes;
+    const b64 = mat.content.includes('base64,') ? mat.content.split('base64,')[1] : mat.content;
+    const binaryStr = atob(b64);
+    bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i) & 0xFF;
 
-    // Handle both data URL and raw base64
-    if (mat.content.includes('base64,')) {
-      const b64 = mat.content.split('base64,')[1];
-      const bin = atob(b64);
-      bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    } else {
-      // Try as raw base64
-      try {
-        const bin = atob(mat.content);
-        bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      } catch(e2) {
-        container.innerHTML = '<p style="color:var(--text-secondary)">Invalid PDF data format</p>';
-        return;
-      }
+    if (bytes.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:#e53935"><p>PDF data is empty</p></div>';
+      return;
     }
 
-    const loadingTask = pdfjsLib.getDocument({ data: bytes });
+    // Disable worker for reliability - renders on main thread
+    const loadingTask = pdfjsLib.getDocument({ data: bytes, disableWorker: true });
     viewerPdfDoc = await loadingTask.promise;
+
+    if (!viewerPdfDoc || !viewerPdfDoc.numPages) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:#e53935"><p>PDF has no pages</p></div>';
+      return;
+    }
 
     viewerTotalPages = viewerPdfDoc.numPages + Object.keys(mat.extraPages || {}).length;
     mat.pageCount = viewerTotalPages;
@@ -868,8 +865,8 @@ async function openPdfViewer(mat) {
     updateViewerFooter();
 
   } catch(err) {
-    console.error('PDF load error:', err);
-    container.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:40px"><p style="font-size:14px;color:#e53935;margin-bottom:8px">Failed to load PDF</p><p style="font-size:12px;opacity:0.6">' + (err.message || 'Unknown error') + '</p></div>';
+    console.error('PDF error:', err);
+    container.innerHTML = '<div style="text-align:center;padding:40px"><p style="font-size:14px;color:#e53935;margin-bottom:8px">Failed to load PDF</p><p style="font-size:12px;opacity:0.6">' + (err.message || 'Unknown') + '</p></div>';
   }
 }
 
